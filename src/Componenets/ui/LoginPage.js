@@ -66,6 +66,9 @@ const LoginPage = () => {
       const data = await loginUser(normalizedLoginData);
 
       if (data.ok) {
+        if (data.token) {
+          localStorage.setItem("adminToken", data.token);
+        }
         setLoginData({ name: "", email: "", password: "" });
         router.push("/msp-admin/dashboard");
       } else {
