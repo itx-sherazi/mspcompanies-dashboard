@@ -70,7 +70,7 @@ const LoginPage = () => {
           localStorage.setItem("adminToken", data.token);
         }
         setLoginData({ name: "", email: "", password: "" });
-        router.push("/msp-admin/dashboard");
+        window.location.href = "/msp-admin/dashboard";
       } else {
         setErrors({ general: data.message || "Login failed" });
       }

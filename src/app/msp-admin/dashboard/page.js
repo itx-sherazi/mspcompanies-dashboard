@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Sidebar from "@/Componenets/Dashboard/Sidebar";
 import Header from "@/Componenets/Dashboard/Header";
 import AllBlogs from "@/Componenets/Dashboard/AllBlogs";
@@ -13,6 +14,17 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("blog");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingBlog, setEditingBlog] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      router.replace("/");
+    } else {
+      setAuthChecked(true);
+    }
+  }, []);
 
   const handleEditBlog = (blog) => {
     setEditingBlog(blog);
@@ -51,6 +63,14 @@ export default function Dashboard() {
         return <AllBlogs onEdit={handleEditBlog} />;
     }
   };
+
+  if (!authChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
