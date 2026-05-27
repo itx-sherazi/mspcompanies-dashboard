@@ -17,6 +17,10 @@ function authHeaders(extra = {}) {
   };
 }
 
+export function getAuthHeaders(extra = {}) {
+  return authHeaders(extra);
+}
+
 export const loginUser = async (loginData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/login`, {

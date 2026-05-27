@@ -9,6 +9,7 @@ import DataRequest from "@/Componenets/Dashboard/DataRequest";
 import AddUser from "@/Componenets/Dashboard/AddUser";
 import AllUsers from "@/Componenets/Dashboard/Users";
 import CityHubManagement from "@/Componenets/Dashboard/CityHub";
+import ListingRequests from "@/Componenets/Dashboard/ListingRequests";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("blog");
@@ -58,6 +59,8 @@ export default function Dashboard() {
      
         case "CityHub":
         return <CityHubManagement />;
+      case "ListingRequests":
+        return <ListingRequests />;
      
       default:
         return <AllBlogs onEdit={handleEditBlog} />;

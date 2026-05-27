@@ -6,6 +6,7 @@ import {
   FaUsers,
   FaUserPlus,
   FaMapMarkedAlt,
+  FaListAlt,
 } from "react-icons/fa";
 
 export default function Sidebar({
@@ -78,6 +79,14 @@ export default function Sidebar({
           label="City hub (MSP)"
           isActive={activeTab === "CityHub"}
           onClick={() => setActiveTab("CityHub")}
+          sidebarOpen={sidebarOpen}
+        />
+
+        <SidebarButton
+          icon={<FaListAlt size={20} />}
+          label="Listing Requests"
+          isActive={activeTab === "ListingRequests"}
+          onClick={() => setActiveTab("ListingRequests")}
           sidebarOpen={sidebarOpen}
         />
 
