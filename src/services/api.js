@@ -83,7 +83,7 @@ export const deleteBlog = async (id) => {
 
 export const AddBlog = async (formData) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/creat`, {
+    const response = await fetch(`${API_BASE_URL}/create`, {
       method: "POST",
       headers: authHeaders(),
       credentials: "include",
@@ -139,6 +139,15 @@ export const fetchBlog = async (page = 1, limit = 10) => {
     totalPages: result.totalPages,
     totalBlogs: result.totalBlogs,
   };
+};
+
+export const fetchBlogById = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/admin/blog/${id}`, {
+    headers: authHeaders(),
+    credentials: "include",
+  });
+  const result = await response.json();
+  return result.data;
 };
 
 export const getAdminUsers = async () => {

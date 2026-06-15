@@ -52,8 +52,8 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
           : blogData.tags || "",
       );
       setCategory(blogData.category || "General");
-      setMetaTitle(blogData.metaTitle || "");
-      setMetaDescription(blogData.metaDescription || "");
+      setMetaTitle(typeof blogData.metaTitle === "string" ? blogData.metaTitle : "");
+      setMetaDescription(typeof blogData.metaDescription === "string" ? blogData.metaDescription : "");
 
       setFaqs(blogData.faqs || []);
       setPublished(blogData.published || false);
@@ -503,9 +503,12 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
           </label>
           <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
             <Editor
+              key={blogData?._id || "new"}
               tinymceScriptSrc="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.3/tinymce.min.js"
-              onInit={(evt, editor) => (editorRef.current = editor)}
-              value={body}
+              onInit={(evt, editor) => {
+                editorRef.current = editor;
+              }}
+              initialValue={blogData?.body || ""}
               onEditorChange={(newValue) => setBody(newValue)}
               init={{
                 height: 600,

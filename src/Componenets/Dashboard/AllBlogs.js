@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { deleteBlog, fetchBlog } from "../../services/api";
+import { deleteBlog, fetchBlog, fetchBlogById } from "../../services/api";
 import { Trash2, Search, ChevronLeft, ChevronRight, Tag, FolderOpen, Key, Edit } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import "react-toastify/dist/ReactToastify.css";
@@ -282,7 +282,15 @@ export default function Blog({ onEdit }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <button
-                      onClick={() => onEdit && onEdit(blog)}
+                      onClick={async () => {
+                        if (!onEdit) return;
+                        try {
+                          const fullBlog = await fetchBlogById(blog._id);
+                          onEdit(fullBlog);
+                        } catch {
+                          onEdit(blog);
+                        }
+                      }}
                       className="text-blue-500 hover:text-blue-700 mr-3"
                       title={`Edit ${blog.title || "blog"}`}
                     >
