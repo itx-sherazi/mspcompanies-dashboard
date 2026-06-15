@@ -129,12 +129,15 @@ export const fetchRequest = async () => {
 };
 
 export const fetchBlog = async (page = 1, limit = 10) => {
-  const response = await fetch(`${API_BASE_URL}/get?page=${page}&limit=${limit}`);
+  const response = await fetch(`${API_BASE_URL}/admin/all?page=${page}&limit=${limit}`, {
+    headers: authHeaders(),
+    credentials: "include",
+  });
   const result = await response.json();
   return {
     data: result.data,
     totalPages: result.totalPages,
-    totalBlogs: result.totalPosts,
+    totalBlogs: result.totalBlogs,
   };
 };
 

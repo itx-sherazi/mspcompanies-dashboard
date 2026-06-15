@@ -23,6 +23,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
   const [metaDescription, setMetaDescription] = useState("");
 
   const [faqs, setFaqs] = useState([]);
+  const [published, setPublished] = useState(false);
   const editorRef = useRef(null);
 
   // Predefined categories for better UX
@@ -55,6 +56,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
       setMetaDescription(blogData.metaDescription || "");
 
       setFaqs(blogData.faqs || []);
+      setPublished(blogData.published || false);
 
       if (blogData.image) {
         const API_URL =
@@ -131,7 +133,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (publishStatus) => {
     if (!title || !body) {
       toast.error("Please fill in all required fields (Title, Content).");
       return;
@@ -140,11 +142,6 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
     const normalizedSlug = slugify(slug);
     if (slug && !normalizedSlug) {
       toast.error("Slug is invalid. Please enter a valid URL slug.");
-      return;
-    }
-
-    if (!blogData && !image) {
-      toast.error("Please upload a cover image.");
       return;
     }
 
@@ -162,33 +159,32 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
     formData.append("category", category);
     formData.append("metaTitle", metaTitle);
     formData.append("metaDescription", metaDescription);
-
     formData.append("faqs", JSON.stringify(faqs));
+    formData.append("published", publishStatus !== undefined ? publishStatus : published);
 
     setLoading(true);
 
     try {
       if (blogData) {
         await updateBlog(blogData._id, formData);
-        showSuccess("Blog post updated successfully!");
+        showSuccess(publishStatus === true ? "Blog post published!" : publishStatus === false ? "Blog saved as draft!" : "Blog post updated successfully!");
         if (setEditingBlog) setEditingBlog(null);
         if (setActiveTab) setActiveTab("blog");
       } else {
         await AddBlog(formData);
-        showSuccess("Blog post created successfully!");
+        showSuccess(publishStatus === true ? "Blog post published successfully!" : "Blog saved as draft!");
         // Reset form
         setTitle("");
         setSlug("");
         setSlugTouched(false);
         setBody("");
-
         setImage(null);
         setPreview(null);
         setTags("");
         setCategory("General");
         setMetaTitle("");
         setMetaDescription("");
-
+        setPublished(false);
         setFaqs([]);
         if (editorRef.current) {
           editorRef.current.setContent("");
@@ -216,7 +212,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
         <h1 className="text-4xl font-bold text-gray-800">
           {blogData ? "✍️ Edit Blog" : "✍️ Write New Blog"}
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {blogData && (
             <button
               onClick={handleCancel}
@@ -225,40 +221,33 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
               Cancel
             </button>
           )}
+
+          {/* Draft Button */}
           <button
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={loading}
-            className={`${
-              loading
-                ? "bg-[#1d4882] cursor-not-allowed opacity-70"
-                : "bg-[#1d4882]  cursor-pointer"
-            } text-white px-6 py-3 rounded-lg text-lg font-semibold flex items-center gap-2 justify-center transition-all duration-200 shadow-lg`}
+            className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 py-3 rounded-lg text-lg font-semibold flex items-center gap-2 transition-all duration-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {loading ? (
-              <>
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8h4l-3 3-3-3h4z"
-                  ></path>
-                </svg>
-                {blogData ? "Updating..." : "Publishing..."}
-              </>
-            ) : (
-              <>{blogData ? "📝 Update Blog" : "📝 Publish Blog"}</>
-            )}
+              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8h4l-3 3-3-3h4z" />
+              </svg>
+            ) : "📄"} Save as Draft
+          </button>
+
+          {/* Publish Button */}
+          <button
+            onClick={() => handleSubmit(true)}
+            disabled={loading}
+            className="bg-[#1d4882] hover:bg-[#15325b] text-white px-6 py-3 rounded-lg text-lg font-semibold flex items-center gap-2 transition-all duration-200 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 11-8 8h4l-3 3-3-3h4z" />
+              </svg>
+            ) : "🚀"} {blogData ? (published ? "Update & Keep Live" : "Publish Live") : "Publish Live"}
           </button>
         </div>
       </div>
@@ -485,14 +474,13 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
         {/* Image Upload */}
         <div>
           <label className="block mb-3 font-semibold text-gray-700 text-lg">
-            Cover Image {blogData ? "(Leave empty to keep existing)" : "*"}
+            Cover Image <span className="text-gray-400 font-normal text-sm">(Optional)</span>
           </label>
           <input
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             className="w-full p-3 border-2 border-gray-300 rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-[#1d4882] file:text-white file:cursor-pointer hover:file:bg-[#17807d] transition-all duration-200"
-            required={!blogData}
           />
           {preview && (
             <div className="mt-4">
