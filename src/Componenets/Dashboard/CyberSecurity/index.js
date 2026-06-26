@@ -3,35 +3,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
-  uploadManagedItSheet,
-  fetchManagedItAdmin,
-  deleteManagedItCompany,
-  deleteAllManagedIt,
+  uploadCyberSecuritySheet,
+  fetchCyberSecurityAdmin,
+  deleteCyberSecurityCompany,
+  deleteAllCyberSecurity,
 } from "@/services/api";
 import {
-  Upload,
-  Search,
-  Trash2,
-  AlertTriangle,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  FileSpreadsheet,
-  RefreshCw,
-  Globe,
-  MapPin,
+  Upload, Search, Trash2, AlertTriangle, Shield,
+  ChevronLeft, ChevronRight, FileSpreadsheet, RefreshCw,
+  Globe, MapPin,
 } from "lucide-react";
 
 const REQUIRED_COLUMNS = [
   "Company Name", "# Employees", "Industry", "Website",
-  "Company Services", "Company Partners", "Company Linkedin Url",
-  "Facebook Url", "Twitter Url", "Company Street", "Company City",
-  "Company State", "Company Country", "Company Postal Code",
-  "Company Address", "Keywords", "Company Phone", "Technologies",
-  "SIC Codes", "NAICS Codes", "Short Description", "Founded Year", "Logo Url",
+  "Company Linkedin Url", "Facebook Url", "Twitter Url",
+  "Company Street", "Company City", "Company State",
+  "Company Country", "Company Postal Code", "Company Address",
+  "Keywords", "Company Phone", "Technologies",
+  "SIC Codes", "NAICS Codes", "Short Description",
+  "Founded Year", "Logo Url",
 ];
 
-export default function ManagedItServicesManagement() {
+export default function CyberSecurityManagement() {
   const [companies, setCompanies]   = useState([]);
   const [total, setTotal]           = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -41,13 +34,13 @@ export default function ManagedItServicesManagement() {
   const [uploading, setUploading]   = useState(false);
   const [uploadMode, setUploadMode] = useState("append");
   const [uploadFile, setUploadFile] = useState(null);
-  const [tab, setTab]               = useState("list"); // "list" | "upload"
+  const [tab, setTab]               = useState("list");
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const fileRef = useRef(null);
 
   const load = useCallback(async (p = 1, q = "") => {
     setLoading(true);
-    const res = await fetchManagedItAdmin({ q, page: p, limit: 50 });
+    const res = await fetchCyberSecurityAdmin({ q, page: p, limit: 50 });
     if (res.data?.ok) {
       setCompanies(res.data.data || []);
       setTotal(res.data.total || 0);
@@ -70,7 +63,7 @@ export default function ManagedItServicesManagement() {
     e.preventDefault();
     if (!uploadFile) { toast.error("Select an Excel file first"); return; }
     setUploading(true);
-    const res = await uploadManagedItSheet(uploadFile, uploadMode);
+    const res = await uploadCyberSecuritySheet(uploadFile, uploadMode);
     setUploading(false);
     if (res.data?.ok) {
       toast.success(res.data.message || "Upload successful");
@@ -85,7 +78,7 @@ export default function ManagedItServicesManagement() {
 
   const handleDelete = async (slug, name) => {
     if (!window.confirm(`Delete "${name}"?`)) return;
-    const res = await deleteManagedItCompany(slug);
+    const res = await deleteCyberSecurityCompany(slug);
     if (res.data?.ok) {
       toast.success("Company deleted");
       load(page, search);
@@ -95,7 +88,7 @@ export default function ManagedItServicesManagement() {
   };
 
   const handleDeleteAll = async () => {
-    const res = await deleteAllManagedIt();
+    const res = await deleteAllCyberSecurity();
     if (res.data?.ok) {
       toast.success(res.data.message);
       setConfirmDeleteAll(false);
@@ -111,11 +104,11 @@ export default function ManagedItServicesManagement() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Building2 size={22} className="text-[#1d4882]" />
-            Managed IT Services Directory
+            <Shield size={22} className="text-[#1d4882]" />
+            Cybersecurity Companies Directory
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total.toLocaleString()} companies · /managed-it-services
+            {total.toLocaleString()} companies · /cybersecurity-companies
           </p>
         </div>
         <div className="flex gap-2">
@@ -141,9 +134,7 @@ export default function ManagedItServicesManagement() {
             <FileSpreadsheet size={18} className="text-[#1d4882]" />
             Upload Excel Sheet
           </h2>
-          <p className="text-xs text-gray-500 mb-4">
-            Sheet must have these columns (any order):
-          </p>
+          <p className="text-xs text-gray-500 mb-4">Sheet must have these columns (any order):</p>
           <div className="flex flex-wrap gap-1 mb-5">
             {REQUIRED_COLUMNS.map((c) => (
               <span key={c} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded font-mono">
@@ -173,9 +164,7 @@ export default function ManagedItServicesManagement() {
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
                 className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1d4882] file:text-white hover:file:bg-[#163a6e] cursor-pointer"
               />
-              {uploadFile && (
-                <p className="text-xs text-green-600 mt-1 font-medium">✓ {uploadFile.name}</p>
-              )}
+              {uploadFile && <p className="text-xs text-green-600 mt-1 font-medium">✓ {uploadFile.name}</p>}
             </div>
             {uploadMode === "replace" && (
               <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
@@ -197,7 +186,6 @@ export default function ManagedItServicesManagement() {
       {/* List Tab */}
       {tab === "list" && (
         <>
-          {/* Search + Delete All */}
           <div className="flex flex-wrap gap-3 items-center">
             <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[220px]">
               <div className="relative flex-1">
@@ -210,13 +198,9 @@ export default function ManagedItServicesManagement() {
                   className="w-full pl-9 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1d4882]/30 focus:border-[#1d4882]"
                 />
               </div>
-              <button type="submit" className="px-4 py-2 bg-[#1d4882] text-white rounded-lg text-sm font-semibold hover:bg-[#163a6e]">
-                Search
-              </button>
+              <button type="submit" className="px-4 py-2 bg-[#1d4882] text-white rounded-lg text-sm font-semibold hover:bg-[#163a6e]">Search</button>
               {search && (
-                <button type="button" onClick={() => { setSearch(""); load(1, ""); }} className="px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-                  Clear
-                </button>
+                <button type="button" onClick={() => { setSearch(""); load(1, ""); }} className="px-3 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">Clear</button>
               )}
             </form>
             <button
@@ -227,7 +211,6 @@ export default function ManagedItServicesManagement() {
             </button>
           </div>
 
-          {/* Confirm delete all modal */}
           {confirmDeleteAll && (
             <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
               <div className="bg-white rounded-xl p-6 max-w-sm w-full shadow-xl">
@@ -235,7 +218,7 @@ export default function ManagedItServicesManagement() {
                   <AlertTriangle size={22} className="text-red-500" />
                   <h3 className="font-bold text-gray-800">Delete All Companies?</h3>
                 </div>
-                <p className="text-sm text-gray-500 mb-5">This will permanently delete all {total.toLocaleString()} managed IT companies. This cannot be undone.</p>
+                <p className="text-sm text-gray-500 mb-5">This will permanently delete all {total.toLocaleString()} cybersecurity companies. This cannot be undone.</p>
                 <div className="flex gap-3">
                   <button onClick={() => setConfirmDeleteAll(false)} className="flex-1 py-2 border rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
                   <button onClick={handleDeleteAll} className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700">Delete All</button>
@@ -244,14 +227,13 @@ export default function ManagedItServicesManagement() {
             </div>
           )}
 
-          {/* Table */}
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="w-8 h-8 border-4 border-[#1d4882] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : companies.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-xl border">
-              <Building2 size={36} className="mx-auto text-gray-300 mb-3" />
+              <Shield size={36} className="mx-auto text-gray-300 mb-3" />
               <p className="text-gray-500 text-sm">No companies found. Upload an Excel sheet to get started.</p>
             </div>
           ) : (
@@ -283,16 +265,16 @@ export default function ManagedItServicesManagement() {
                               <MapPin size={11} className="text-gray-400" />
                               {[c.companyCity, c.companyState].filter(Boolean).join(", ")}
                             </span>
-                          ) : <span className="text-gray-300 text-xs"></span>}
+                          ) : <span className="text-gray-300 text-xs">—</span>}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 max-w-[140px] truncate">{c.industry || ""}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600">{c.employees || ""}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 max-w-[140px] truncate">{c.industry || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{c.employees || "—"}</td>
                         <td className="px-4 py-3">
                           {c.website ? (
                             <a href={c.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#1d4882] hover:underline">
                               <Globe size={11} /> Visit
                             </a>
-                          ) : <span className="text-gray-300 text-xs"></span>}
+                          ) : <span className="text-gray-300 text-xs">—</span>}
                         </td>
                         <td className="px-4 py-3">
                           <button
@@ -309,25 +291,14 @@ export default function ManagedItServicesManagement() {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50">
-                  <p className="text-xs text-gray-500">
-                    Page {page} of {totalPages} · {total.toLocaleString()} total
-                  </p>
+                  <p className="text-xs text-gray-500">Page {page} of {totalPages} · {total.toLocaleString()} total</p>
                   <div className="flex gap-1">
-                    <button
-                      onClick={() => load(page - 1, search)}
-                      disabled={page <= 1}
-                      className="p-1.5 rounded border text-gray-600 hover:bg-white disabled:opacity-40"
-                    >
+                    <button onClick={() => load(page - 1, search)} disabled={page <= 1} className="p-1.5 rounded border text-gray-600 hover:bg-white disabled:opacity-40">
                       <ChevronLeft size={14} />
                     </button>
-                    <button
-                      onClick={() => load(page + 1, search)}
-                      disabled={page >= totalPages}
-                      className="p-1.5 rounded border text-gray-600 hover:bg-white disabled:opacity-40"
-                    >
+                    <button onClick={() => load(page + 1, search)} disabled={page >= totalPages} className="p-1.5 rounded border text-gray-600 hover:bg-white disabled:opacity-40">
                       <ChevronRight size={14} />
                     </button>
                   </div>

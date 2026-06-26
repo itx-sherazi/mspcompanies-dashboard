@@ -8,6 +8,7 @@ import {
   FaMapMarkedAlt,
   FaListAlt,
   FaBuilding,
+  FaShieldAlt,
 } from "react-icons/fa";
 
 export default function Sidebar({
@@ -88,6 +89,14 @@ export default function Sidebar({
           label="Managed IT Services"
           isActive={activeTab === "ManagedIT"}
           onClick={() => setActiveTab("ManagedIT")}
+          sidebarOpen={sidebarOpen}
+        />
+
+        <SidebarButton
+          icon={<FaShieldAlt size={20} />}
+          label="Cybersecurity"
+          isActive={activeTab === "CyberSecurity"}
+          onClick={() => setActiveTab("CyberSecurity")}
           sidebarOpen={sidebarOpen}
         />
 

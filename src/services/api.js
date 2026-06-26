@@ -319,6 +319,75 @@ export const uploadCityCompaniesSheet = async (file, citySlug) => {
   }
 };
 
+// ── Cybersecurity Companies ─────────────────────────────
+
+export const uploadCyberSecuritySheet = async (file, mode = "append") => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("mode", mode);
+    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/upload`, {
+      method: "POST",
+      headers: authHeaders(),
+      credentials: "include",
+      body: formData,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Upload failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
+  }
+};
+
+export const fetchCyberSecurityAdmin = async ({ q = "", page = 1, limit = 50 } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (String(q).trim()) params.set("q", String(q).trim());
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies?${params}`, {
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load companies");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
+export const deleteCyberSecurityCompany = async (slug) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Delete failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
+export const deleteAllCyberSecurity = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/all`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Delete all failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
 // ── Managed IT Services ─────────────────────────────────
 
 export const uploadManagedItSheet = async (file, mode = "append") => {
