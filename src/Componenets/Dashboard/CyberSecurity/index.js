@@ -265,16 +265,16 @@ export default function CyberSecurityManagement() {
                               <MapPin size={11} className="text-gray-400" />
                               {[c.companyCity, c.companyState].filter(Boolean).join(", ")}
                             </span>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
+                          ) : <span className="text-gray-300 text-xs"></span>}
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 max-w-[140px] truncate">{c.industry || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-600">{c.employees || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600 max-w-[140px] truncate">{c.industry || ""}</td>
+                        <td className="px-4 py-3 text-xs text-gray-600">{c.employees || ""}</td>
                         <td className="px-4 py-3">
                           {c.website ? (
                             <a href={c.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#1d4882] hover:underline">
                               <Globe size={11} /> Visit
                             </a>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
+                          ) : <span className="text-gray-300 text-xs"></span>}
                         </td>
                         <td className="px-4 py-3">
                           <button
