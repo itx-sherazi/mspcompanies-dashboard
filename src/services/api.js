@@ -8,7 +8,6 @@ function getToken() {
   return localStorage.getItem("adminToken");
 }
 
-// Auth headers helper
 function authHeaders(extra = {}) {
   const token = getToken();
   return {
