@@ -48,10 +48,10 @@ export default function Blog({ onEdit }) {
         setLoading(true);
         // Fetch blogs with pagination parameters
         const response = await fetchBlog(currentPage, itemsPerPage);
-        setData(response.data);
-        setFilteredData(response.data);
-        setTotalPages(response.totalPages);
-        setTotalBlogs(response.totalBlogs);
+        setData(response.data || []);
+        setFilteredData(response.data || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalBlogs(response.totalBlogs || 0);
       } catch (err) {
         setError(err.message);
       } finally {
@@ -67,9 +67,9 @@ export default function Blog({ onEdit }) {
   // Handle search functionality
   useEffect(() => {
     if (!searchTerm.trim()) {
-      setFilteredData(data);
+      setFilteredData(data || []);
     } else {
-      const filtered = data.filter((blog) =>
+      const filtered = (data || []).filter((blog) =>
         blog.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         blog.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (blog.tags && blog.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
@@ -101,10 +101,10 @@ export default function Blog({ onEdit }) {
         await deleteBlog(blogId);
         // Refetch data after deletion
         const response = await fetchBlog(currentPage, itemsPerPage);
-        setData(response.data);
-        setFilteredData(response.data);
-        setTotalPages(response.totalPages);
-        setTotalBlogs(response.totalBlogs);
+        setData(response.data || []);
+        setFilteredData(response.data || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalBlogs(response.totalBlogs || 0);
         toast.success("Blog deleted successfully");
       } catch (err) {
         toast.error("Failed to delete blog");

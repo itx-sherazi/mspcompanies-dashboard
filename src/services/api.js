@@ -319,6 +319,240 @@ export const uploadCityCompaniesSheet = async (file, citySlug) => {
   }
 };
 
+// ── Vendor Directory  Vendors ──────────────────────────
+
+export const fetchVendors = async ({ search = "", group = "", page = 1, limit = 50 } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (group)  params.set("group",  group);
+    params.set("page",  String(page));
+    params.set("limit", String(limit));
+    const response = await fetch(`${API_BASE_URL}/vendors?${params}`, {
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const fetchVendorBySlug = async (slug) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}`, {
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const createVendor = async (body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const updateVendor = async (slug, body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const deleteVendor = async (slug) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const importVendors = async (vendors) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors/import`, {
+      method: "POST",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ vendors }),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+// ── Vendor Directory  Categories ───────────────────────
+
+export const fetchCategories = async ({ group = "", status = "" } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (group)  params.set("group",  group);
+    if (status) params.set("status", status);
+    const response = await fetch(`${API_BASE_URL}/categories?${params}`, {
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const fetchCategoryBySlug = async (slug) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories/${encodeURIComponent(slug)}`, {
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const updateCategory = async (slug, body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const updateCategoryRankings = async (slug, vendorRankings) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories/${encodeURIComponent(slug)}/rankings`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify({ vendorRankings }),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const createCategory = async (body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const deleteCategory = async (slug) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+// ── Vendor Directory  Parent Categories ─────────────────
+
+export const fetchParentCategories = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/parent-categories`, {
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const createParentCategory = async (body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/parent-categories`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const updateParentCategory = async (id, body) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/parent-categories/${id}`, {
+      method: "PUT",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify(body),
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
+export const deleteParentCategory = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/parent-categories/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(), credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
 // ── Cybersecurity Companies ─────────────────────────────
 
 export const uploadCyberSecuritySheet = async (file, mode = "append") => {

@@ -9,6 +9,7 @@ import {
   FaListAlt,
   FaBuilding,
   FaShieldAlt,
+  FaLayerGroup,
 } from "react-icons/fa";
 
 export default function Sidebar({
@@ -97,6 +98,14 @@ export default function Sidebar({
           label="Cybersecurity"
           isActive={activeTab === "CyberSecurity"}
           onClick={() => setActiveTab("CyberSecurity")}
+          sidebarOpen={sidebarOpen}
+        />
+
+        <SidebarButton
+          icon={<FaLayerGroup size={20} />}
+          label="Vendor Directory"
+          isActive={activeTab === "VendorDirectory"}
+          onClick={() => setActiveTab("VendorDirectory")}
           sidebarOpen={sidebarOpen}
         />
 

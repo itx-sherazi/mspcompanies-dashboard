@@ -12,6 +12,7 @@ import CityHubManagement from "@/Componenets/Dashboard/CityHub";
 import ListingRequests from "@/Componenets/Dashboard/ListingRequests";
 import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServices";
 import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
+import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("blog");
@@ -67,6 +68,8 @@ export default function Dashboard() {
         return <ManagedItServicesManagement />;
       case "CyberSecurity":
         return <CyberSecurityManagement />;
+      case "VendorDirectory":
+        return <VendorDirectory />;
       default:
         return <AllBlogs onEdit={handleEditBlog} />;
     }
