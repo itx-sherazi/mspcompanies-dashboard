@@ -392,6 +392,20 @@ export const deleteVendor = async (slug) => {
   }
 };
 
+export const deleteAllVendors = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/vendors/all`, {
+      method: "DELETE",
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
 export const importVendors = async (vendors) => {
   try {
     const response = await fetch(`${API_BASE_URL}/vendors/import`, {

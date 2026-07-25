@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import { toast } from "react-toastify";
-import { importVendors } from "@/services/api";
-import { Upload, FileText, CheckCircle, AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
+import { importVendors, deleteAllVendors } from "@/services/api";
+import { Upload, FileText, CheckCircle, AlertCircle, ChevronDown, ChevronUp, X, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 
 // ── Column mapping: sheet header → internal field name ──
@@ -29,6 +29,19 @@ const COL_MAP = {
   "short description":     "description",
   "founded year":          "founded",
   "logo url":              "logoUrl",
+  // MSP-specific fields
+  "slug":                  "slug",
+  "key features":          "keyFeatures",
+  "pricing":               "pricingNotes",
+  "best for":              "bestFor",
+  "pros":                  "pros",
+  "cons":                  "cons",
+  "msp partner program":   "mspPartnerProgram",
+  "partner program notes": "mspPartnerProgramNotes",
+  "multi-tenancy":         "multiTenancy",
+  "key integrations":      "integrations",
+  "categories":            "categories",
+  "groups":                "groups",
 };
 
 // ── Simple CSV parser (handles quoted fields) ──
@@ -75,16 +88,31 @@ function parseCSVText(text) {
   return rows;
 }
 
-const PREVIEW_COLS = ["name","website","city","country","industry","employees","description"];
+const PREVIEW_COLS = ["name","slug","website","city","industry","pricingModel","bestFor","mspPartnerProgram","multiTenancy","categories"];
 
 export default function VendorImport() {
-  const [rows, setRows]           = useState([]);
-  const [fileName, setFileName]   = useState("");
-  const [importing, setImporting] = useState(false);
-  const [result, setResult]       = useState(null);
+  const [rows, setRows]             = useState([]);
+  const [fileName, setFileName]     = useState("");
+  const [importing, setImporting]   = useState(false);
+  const [result, setResult]         = useState(null);
   const [showErrors, setShowErrors] = useState(false);
-  const [dragOver, setDragOver]   = useState(false);
+  const [dragOver, setDragOver]     = useState(false);
+  const [deleting, setDeleting]     = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const fileRef = useRef();
+
+  const handleDeleteAll = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleting(true);
+    const res = await deleteAllVendors();
+    setDeleting(false);
+    setConfirmDelete(false);
+    if (res.data?.ok) {
+      toast.success(`${res.data.deleted} vendors deleted successfully`);
+    } else {
+      toast.error(res.data?.error || "Delete failed");
+    }
+  };
 
   const handleFile = (file) => {
     if (!file) return;
@@ -154,19 +182,88 @@ export default function VendorImport() {
     <div className="p-6 max-w-5xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Import Vendors from Sheet</h2>
-        <p className="text-sm text-gray-500 mt-1">Upload a CSV or TSV file. Existing vendors are updated (empty fields only); new ones are created.</p>
+        <p className="text-sm text-gray-500 mt-1">Upload CSV or Excel (.xlsx). New vendors are created; existing ones are updated (empty fields only). All 32 fields supported.</p>
+      </div>
+
+      {/* Danger Zone */}
+      <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-bold text-red-700">Delete All Vendors</p>
+          <p className="text-xs text-red-500 mt-0.5">Permanently removes every vendor from the database. This cannot be undone.</p>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {confirmDelete && (
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            onClick={handleDeleteAll}
+            disabled={deleting}
+            className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition disabled:opacity-60 ${
+              confirmDelete
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-white text-red-600 border border-red-300 hover:bg-red-50"
+            }`}
+          >
+            <Trash2 size={14} />
+            {deleting ? "Deleting…" : confirmDelete ? "Yes, Delete All" : "Delete All"}
+          </button>
+        </div>
       </div>
 
       {/* Supported columns info */}
       <div className="mb-6 bg-[#EBF3FF] border border-[#C7DEFF] rounded-xl p-4">
-        <p className="text-xs font-bold text-[#1d4882] uppercase tracking-wide mb-2">Supported Column Headers</p>
-        <div className="flex flex-wrap gap-1.5">
-          {Object.keys(COL_MAP).map((col) => (
-            <span key={col} className="text-xs bg-white border border-[#C7DEFF] text-[#1d4882] px-2 py-0.5 rounded font-mono">
-              {col}
-            </span>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-[#1d4882] uppercase tracking-wide">Supported Column Headers</p>
+          <span className="text-xs text-[#1d4882] bg-white border border-[#C7DEFF] px-2 py-0.5 rounded">{Object.keys(COL_MAP).length} columns</span>
+        </div>
+
+        {/* Company info */}
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Company Info</p>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {["company name","# employees","industry","website","short description","founded year","logo url","company phone"].map((col) => (
+            <span key={col} className="text-xs bg-white border border-[#C7DEFF] text-[#1d4882] px-2 py-0.5 rounded font-mono">{col}</span>
           ))}
         </div>
+
+        {/* Location */}
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Location</p>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {["company street","company city","company state","company country","company postal code","company address"].map((col) => (
+            <span key={col} className="text-xs bg-white border border-[#C7DEFF] text-[#1d4882] px-2 py-0.5 rounded font-mono">{col}</span>
+          ))}
+        </div>
+
+        {/* Social */}
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Social</p>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {["company linkedin url","facebook url","twitter url"].map((col) => (
+            <span key={col} className="text-xs bg-white border border-[#C7DEFF] text-[#1d4882] px-2 py-0.5 rounded font-mono">{col}</span>
+          ))}
+        </div>
+
+        {/* Tech */}
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Tech / Taxonomy</p>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {["keywords","technologies","sic codes","naics codes"].map((col) => (
+            <span key={col} className="text-xs bg-white border border-[#C7DEFF] text-[#1d4882] px-2 py-0.5 rounded font-mono">{col}</span>
+          ))}
+        </div>
+
+        {/* MSP fields */}
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">MSP-Specific</p>
+        <div className="flex flex-wrap gap-1.5">
+          {["slug","key features","pricing","best for","pros","cons","msp partner program","partner program notes","multi-tenancy","key integrations","categories","groups"].map((col) => (
+            <span key={col} className="text-xs bg-[#0356A6] border border-[#0356A6] text-white px-2 py-0.5 rounded font-mono">{col}</span>
+          ))}
+        </div>
+        <p className="text-[10px] text-[#1d4882] mt-2">
+          💡 <strong>MSP Partner Program</strong> accepts: Yes / No / Partial &nbsp;|&nbsp; <strong>Multi-Tenancy</strong> accepts: Yes / No &nbsp;|&nbsp; comma-separated for arrays
+        </p>
       </div>
 
       {/* Drop zone */}
