@@ -223,7 +223,7 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
               />
             </Field>
 
-            <Field label="Slug (URL)" hint="Changes the live page URL — update with caution">
+            <Field label="Slug (URL)" hint="Changes the live page URL  update with caution">
               <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#1d4882]">
                 <span className="px-3 py-2 text-xs text-gray-400 bg-gray-50 border-r border-gray-200 whitespace-nowrap">/best/</span>
                 <input
@@ -237,7 +237,7 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
                   }
                 />
               </div>
-              <p className="text-[11px] text-amber-600 mt-1">⚠️ Changing slug will break existing links and SEO — only edit if intentional</p>
+              <p className="text-[11px] text-amber-600 mt-1">⚠️ Changing slug will break existing links and SEO  only edit if intentional</p>
             </Field>
 
             <Field label="Meta Title" hint="Ideal: 50–60 chars for Google">
