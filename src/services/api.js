@@ -406,6 +406,23 @@ export const deleteAllVendors = async () => {
   }
 };
 
+export const uploadVendorLogo = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append("logo", file);
+    const response = await fetch(`${API_BASE_URL}/vendors/upload-logo`, {
+      method: "POST",
+      headers: authHeaders(),
+      credentials: "include",
+      body: formData,
+    });
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, error: error.message } };
+  }
+};
+
 export const importVendors = async (vendors) => {
   try {
     const response = await fetch(`${API_BASE_URL}/vendors/import`, {

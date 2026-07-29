@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { toast } from "react-toastify";
-import { createVendor, updateVendor } from "@/services/api";
-import { ArrowLeft, Save, Plus, X, ExternalLink } from "lucide-react";
+import { createVendor, updateVendor, uploadVendorLogo } from "@/services/api";
+import { ArrowLeft, Save, Plus, X, ExternalLink, Upload, Loader2 } from "lucide-react";
 
 const GROUPS = ["MSP Software","Cybersecurity","Backup & DR","Communications","Monitoring","Compliance","Cloud","Network","AI","Microsoft","Infrastructure"];
 const PRICING_MODELS = ["Per endpoint/month","Per user/month","Per device/month","Flat monthly fee","Quote-based","Freemium","Per GB/month","Annual contract","Usage-based"];
@@ -75,6 +75,24 @@ export default function VendorEditor({ vendor: initialVendor, onBack, onSaved })
   });
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
+
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef(null);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+    const res = await uploadVendorLogo(file);
+    setLogoUploading(false);
+    if (res.data?.ok) {
+      set("logoUrl", res.data.url);
+      toast.success("Logo uploaded!");
+    } else {
+      toast.error(res.data?.error || "Upload failed");
+    }
+    e.target.value = "";
+  };
 
   const handleNameChange = (val) => {
     set("name", val);
@@ -174,12 +192,53 @@ export default function VendorEditor({ vendor: initialVendor, onBack, onSaved })
               <input className={INPUT} value={form.website} onChange={(e) => set("website", e.target.value)} placeholder="https://www.ninjaone.com" />
             </Field>
 
-            <Field label="Logo URL" hint="paste image link  saves directly to DB">
-              <input className={INPUT} value={form.logoUrl} onChange={(e) => set("logoUrl", e.target.value)} placeholder="https://..." />
+            <Field label="Logo" hint="upload image or paste URL">
+              {/* Upload button */}
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <div className="flex gap-2 items-center">
+                <input
+                  className={`${INPUT} flex-1`}
+                  value={form.logoUrl}
+                  onChange={(e) => set("logoUrl", e.target.value)}
+                  placeholder="https://res.cloudinary.com/..."
+                />
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={logoUploading}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#1d4882] text-white text-sm font-semibold rounded-lg hover:bg-[#163a6b] disabled:opacity-60 whitespace-nowrap"
+                >
+                  {logoUploading
+                    ? <><Loader2 size={14} className="animate-spin" /> Uploading…</>
+                    : <><Upload size={14} /> Upload Logo</>
+                  }
+                </button>
+              </div>
               {form.logoUrl && (
                 <div className="mt-2 flex items-center gap-3">
-                  <img src={form.logoUrl} alt="preview" className="h-10 object-contain border border-gray-200 rounded p-1 bg-white" onError={(e) => e.target.style.display = "none"} />
-                  <span className="text-xs text-gray-400">Logo preview</span>
+                  <img
+                    src={form.logoUrl}
+                    alt="preview"
+                    className="h-12 w-12 object-contain border border-gray-200 rounded-lg p-1 bg-white"
+                    onError={(e) => e.target.style.display = "none"}
+                  />
+                  <div>
+                    <p className="text-xs font-semibold text-gray-600">Logo preview</p>
+                    <p className="text-[11px] text-gray-400 truncate max-w-xs">{form.logoUrl}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => set("logoUrl", "")}
+                    className="ml-auto text-gray-400 hover:text-red-500 transition"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
             </Field>
