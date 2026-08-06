@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
-import { Users, Mail, Phone, MessageSquare, DollarSign, Hash, Trash2 } from "lucide-react";
+import { Users, Mail, Phone, MessageSquare, DollarSign, Hash, Trash2, Eye, X } from "lucide-react";
 import { deleteRequestById, fetchRequest } from "@/services/api";
 
 export default function DatasetRequests() {
@@ -10,6 +10,7 @@ export default function DatasetRequests() {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingId, setDeletingId] = useState(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -74,8 +75,11 @@ export default function DatasetRequests() {
   // Safe filtering with fallbacks
   const filteredData = data
     .filter(item => {
-      const name = item?.fullName || "";
-      return name.toLowerCase().includes(searchTerm.toLowerCase());
+      const search = searchTerm.toLowerCase();
+      const name = (item?.fullName || item?.name || "").toLowerCase();
+      const email = (item?.email || "").toLowerCase();
+      const message = (item?.message || item?.notes || "").toLowerCase();
+      return name.includes(search) || email.includes(search) || message.includes(search);
     })
     .map(item => ({
       id: item?.id || item?._id || Math.random().toString(36).substring(2, 9),
@@ -328,24 +332,33 @@ export default function DatasetRequests() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleDeleteRequest(request.id)}
-                        disabled={deletingId === request.id}
-                        className="inline-flex items-center p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Delete request"
-                      >
-                        {deletingId === request.id ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-600"></div>
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </button>
+                      <div className="flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => setSelectedRequest(request)}
+                          className="inline-flex items-center p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="View lead details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRequest(request.id)}
+                          disabled={deletingId === request.id}
+                          className="inline-flex items-center p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Delete request"
+                        >
+                          {deletingId === request.id ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-red-600"></div>
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center">
                       <svg
                         className="h-12 w-12 text-gray-400 mb-4"
@@ -399,6 +412,68 @@ export default function DatasetRequests() {
           </div>
         )}
       </div>
+
+      {/* Modal for full detail view */}
+      {selectedRequest && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl relative animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start border-b pb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-[#1e477f]" />
+                  Lead Request Details
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">ID: {selectedRequest.id}</p>
+              </div>
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-4 text-sm text-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                <div>
+                  <span className="font-semibold text-gray-900 block">Full Name:</span>
+                  <span>{selectedRequest.fullName}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900 block">Email Address:</span>
+                  <a href={`mailto:${selectedRequest.email}`} className="text-blue-600 underline">
+                    {selectedRequest.email}
+                  </a>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900 block">Phone Number:</span>
+                  <span>{selectedRequest.phone || "Not provided"}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-gray-900 block">Date Submitted:</span>
+                  <span>{formatDate(selectedRequest.createdAt)}</span>
+                </div>
+              </div>
+
+              <div>
+                <span className="font-semibold text-gray-900 block mb-1">Full Message & Details:</span>
+                <div className="bg-gray-50 border rounded-lg p-4 font-mono text-xs whitespace-pre-wrap break-words max-h-60 overflow-y-auto">
+                  {selectedRequest.message}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="px-4 py-2 bg-[#1e477f] text-white rounded-lg hover:bg-blue-900 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toaster position="top-right" />
     </div>

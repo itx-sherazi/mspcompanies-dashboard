@@ -57,7 +57,16 @@ export const deleteRequestById = async (id) => {
       headers: authHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
     });
-    const result = await response.json();
+    const text = await response.text();
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch {
+      result = { ok: false, message: `Server error (${response.status})` };
+    }
+    if (!response.ok) {
+      return { ok: false, message: result.message || `Error ${response.status}` };
+    }
     return result;
   } catch (error) {
     console.error("API error deleting request:", error);
@@ -118,8 +127,14 @@ export const fetchRequest = async () => {
       headers: authHeaders(),
       credentials: "include",
     });
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || "Failed to fetch requests");
+    const text = await response.text();
+    let result;
+    try {
+      result = JSON.parse(text);
+    } catch (e) {
+      throw new Error(`Server returned non-JSON response (${response.status})`);
+    }
+    if (!response.ok) throw new Error(result.message || result.error || `Failed to fetch requests (${response.status})`);
     return result;
   } catch (error) {
     console.error("fetchRequest error:", error);
