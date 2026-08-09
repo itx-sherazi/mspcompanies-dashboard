@@ -11,7 +11,6 @@ export default function Header({ sidebarOpen, toggleSidebar }) {
             <span className="absolute top-0 right-0 w-2 h-2 bg-[#1e477f] rounded-full"></span>
           </button>
 
-          {/* Profile Section */}
           <div className="flex items-center space-x-2">
             <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold">
               AD
