@@ -69,6 +69,7 @@ const LoginPage = () => {
         if (data.token) {
           localStorage.setItem("adminToken", data.token);
         }
+        localStorage.setItem("userRole", data.user?.role || "admin");
         setLoginData({ name: "", email: "", password: "" });
         window.location.href = "/msp-admin/dashboard";
       } else {

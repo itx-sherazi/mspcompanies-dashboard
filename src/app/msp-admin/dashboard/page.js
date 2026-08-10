@@ -14,11 +14,22 @@ import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServic
 import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
 import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
 
+// Tabs visible to the "seo" role  must match Sidebar.js's SEO_ALLOWED_TABS.
+const SEO_ALLOWED_TABS = new Set([
+  "blog",
+  "Addblog",
+  "CityHub",
+  "ManagedIT",
+  "CyberSecurity",
+  "VendorDirectory",
+]);
+
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("blog");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingBlog, setEditingBlog] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [role, setRole] = useState("admin");
   const router = useRouter();
 
   useEffect(() => {
@@ -26,9 +37,18 @@ export default function Dashboard() {
     if (!token) {
       router.replace("/");
     } else {
+      setRole(localStorage.getItem("userRole") || "admin");
       setAuthChecked(true);
     }
   }, []);
+
+  // Safety net: if an SEO user's activeTab is ever set to a restricted tab
+  // (e.g. stale state), fall back to a tab they're allowed to see.
+  useEffect(() => {
+    if (role === "seo" && !SEO_ALLOWED_TABS.has(activeTab)) {
+      setActiveTab("blog");
+    }
+  }, [role, activeTab]);
 
   const handleEditBlog = (blog) => {
     setEditingBlog(blog);
@@ -90,6 +110,7 @@ export default function Dashboard() {
         setActiveTab={setActiveTab}
         sidebarOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
+        role={role}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} />

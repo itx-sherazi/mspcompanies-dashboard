@@ -11,6 +11,7 @@ const UserAddPage = () => {
     name: "",
     email: "",
     password: "",
+    role: "admin",
   });
   
   const [showPassword, setShowPassword] = useState(false);
@@ -67,7 +68,7 @@ const UserAddPage = () => {
 
       if (data.ok) {
         showSuccess("User added successfully! 🎉");
-        setSignUpData({ name: "", email: "", password: "" });
+        setSignUpData({ name: "", email: "", password: "", role: "admin" });
         setErrors({});
       } else {
         handleApiError(new Error(data.message || "Failed to add user. Please try again."), 'Adding User');
@@ -204,6 +205,23 @@ const UserAddPage = () => {
                     {errors.password}
                   </p>
                 )}
+              </div>
+
+              {/* Role Field */}
+              <div>
+                <label htmlFor="role" className="block text-sm font-bold text-gray-800 mb-3">
+                  Role
+                </label>
+                <select
+                  id="role"
+                  name="role"
+                  value={signUpData.role}
+                  onChange={handleSignUpChange}
+                  className="w-full px-4 py-4 border-2 rounded-2xl bg-white text-gray-900 border-gray-200 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+                >
+                  <option value="admin">Admin (full access)</option>
+                  <option value="seo">SEO (Blog, City Hub, Managed IT, Cybersecurity, Vendor Directory only)</option>
+                </select>
               </div>
 
               {/* Submit Button */}

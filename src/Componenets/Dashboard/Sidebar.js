@@ -12,12 +12,26 @@ import {
   FaLayerGroup,
 } from "react-icons/fa";
 
+// Tabs visible to the "seo" role  everything else is admin-only.
+const SEO_ALLOWED_TABS = new Set([
+  "blog",
+  "Addblog",
+  "CityHub",
+  "ManagedIT",
+  "CyberSecurity",
+  "VendorDirectory",
+]);
+
 export default function Sidebar({
   activeTab,
   setActiveTab,
   sidebarOpen,
   toggleSidebar,
+  role,
 }) {
+  const isSeo = role === "seo";
+  const show = (tab) => !isSeo || SEO_ALLOWED_TABS.has(tab);
+
   return (
     <div
       className={`${
@@ -34,90 +48,105 @@ export default function Sidebar({
       {/* Navigation Buttons */}
       <div className="flex flex-col mt-6 space-y-2 px-2">
         
-        <SidebarButton
-          icon={<FaRegNewspaper size={20} />}
-          label="All Blogs"
-          isActive={activeTab === "blog"}
-          onClick={() => setActiveTab("blog")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("blog") && (
+          <SidebarButton
+            icon={<FaRegNewspaper size={20} />}
+            label="All Blogs"
+            isActive={activeTab === "blog"}
+            onClick={() => setActiveTab("blog")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaPenFancy size={20} />}
-          label="Add Blogs"
-          isActive={activeTab === "Addblog"}
-          onClick={() => setActiveTab("Addblog")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("Addblog") && (
+          <SidebarButton
+            icon={<FaPenFancy size={20} />}
+            label="Add Blogs"
+            isActive={activeTab === "Addblog"}
+            onClick={() => setActiveTab("Addblog")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaFileSignature size={20} />}
-          label="Data Request"
-          isActive={activeTab === "DataRequest"}
-          onClick={() => setActiveTab("DataRequest")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("DataRequest") && (
+          <SidebarButton
+            icon={<FaFileSignature size={20} />}
+            label="Data Request"
+            isActive={activeTab === "DataRequest"}
+            onClick={() => setActiveTab("DataRequest")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaUserPlus size={20} />}
-          label="Add User"
-          isActive={activeTab === "AddUser"}
-          onClick={() => setActiveTab("AddUser")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("AddUser") && (
+          <SidebarButton
+            icon={<FaUserPlus size={20} />}
+            label="Add User"
+            isActive={activeTab === "AddUser"}
+            onClick={() => setActiveTab("AddUser")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaUsers size={20} />}
-          label="All Users"
-          isActive={activeTab === "Users"}
-          onClick={() => setActiveTab("Users")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("Users") && (
+          <SidebarButton
+            icon={<FaUsers size={20} />}
+            label="All Users"
+            isActive={activeTab === "Users"}
+            onClick={() => setActiveTab("Users")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
+        {show("CityHub") && (
+          <SidebarButton
+            icon={<FaMapMarkedAlt size={20} />}
+            label="City hub (MSP)"
+            isActive={activeTab === "CityHub"}
+            onClick={() => setActiveTab("CityHub")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
+        {show("ManagedIT") && (
+          <SidebarButton
+            icon={<FaBuilding size={20} />}
+            label="Managed IT Services"
+            isActive={activeTab === "ManagedIT"}
+            onClick={() => setActiveTab("ManagedIT")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-   
-        <SidebarButton
-          icon={<FaMapMarkedAlt size={20} />}
-          label="City hub (MSP)"
-          isActive={activeTab === "CityHub"}
-          onClick={() => setActiveTab("CityHub")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("CyberSecurity") && (
+          <SidebarButton
+            icon={<FaShieldAlt size={20} />}
+            label="Cybersecurity"
+            isActive={activeTab === "CyberSecurity"}
+            onClick={() => setActiveTab("CyberSecurity")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaBuilding size={20} />}
-          label="Managed IT Services"
-          isActive={activeTab === "ManagedIT"}
-          onClick={() => setActiveTab("ManagedIT")}
-          sidebarOpen={sidebarOpen}
-        />
+        {show("VendorDirectory") && (
+          <SidebarButton
+            icon={<FaLayerGroup size={20} />}
+            label="Vendor Directory"
+            isActive={activeTab === "VendorDirectory"}
+            onClick={() => setActiveTab("VendorDirectory")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
 
-        <SidebarButton
-          icon={<FaShieldAlt size={20} />}
-          label="Cybersecurity"
-          isActive={activeTab === "CyberSecurity"}
-          onClick={() => setActiveTab("CyberSecurity")}
-          sidebarOpen={sidebarOpen}
-        />
-
-        <SidebarButton
-          icon={<FaLayerGroup size={20} />}
-          label="Vendor Directory"
-          isActive={activeTab === "VendorDirectory"}
-          onClick={() => setActiveTab("VendorDirectory")}
-          sidebarOpen={sidebarOpen}
-        />
-
-        <SidebarButton
-          icon={<FaListAlt size={20} />}
-          label="Listing Requests"
-          isActive={activeTab === "ListingRequests"}
-          onClick={() => setActiveTab("ListingRequests")}
-          sidebarOpen={sidebarOpen}
-        />
-
-       
+        {show("ListingRequests") && (
+          <SidebarButton
+            icon={<FaListAlt size={20} />}
+            label="Listing Requests"
+            isActive={activeTab === "ListingRequests"}
+            onClick={() => setActiveTab("ListingRequests")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
       </div>
     </div>
   );
