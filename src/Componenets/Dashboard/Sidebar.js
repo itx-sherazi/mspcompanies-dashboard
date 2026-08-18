@@ -6,6 +6,8 @@ import {
   FaUsers,
   FaUserPlus,
   FaMapMarkedAlt,
+  FaGlobeAmericas,
+  FaGlobe,
   FaListAlt,
   FaBuilding,
   FaShieldAlt,
@@ -17,6 +19,8 @@ const SEO_ALLOWED_TABS = new Set([
   "blog",
   "Addblog",
   "CityHub",
+  "CountryHub",
+  "MsspCountryHub",
   "ManagedIT",
   "CyberSecurity",
   "VendorDirectory",
@@ -104,6 +108,26 @@ export default function Sidebar({
             label="City hub (MSP)"
             isActive={activeTab === "CityHub"}
             onClick={() => setActiveTab("CityHub")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("CountryHub") && (
+          <SidebarButton
+            icon={<FaGlobeAmericas size={20} />}
+            label="Top MSPs (Country)"
+            isActive={activeTab === "CountryHub"}
+            onClick={() => setActiveTab("CountryHub")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("MsspCountryHub") && (
+          <SidebarButton
+            icon={<FaGlobe size={20} />}
+            label="Top MSSPs (Country)"
+            isActive={activeTab === "MsspCountryHub"}
+            onClick={() => setActiveTab("MsspCountryHub")}
             sidebarOpen={sidebarOpen}
           />
         )}

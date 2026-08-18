@@ -187,9 +187,10 @@ export const deleteAdminUserById = async (userId) => {
   return await response.json();
 };
 
-export const fetchCitiesAdmin = async () => {
+export const fetchCitiesAdmin = async (hubSlug) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/cities`, {
+    const qs = hubSlug ? `?hubSlug=${encodeURIComponent(hubSlug)}` : "";
+    const response = await fetch(`${API_BASE_URL}/cities${qs}`, {
       headers: authHeaders(),
       credentials: "include",
     });
@@ -279,12 +280,13 @@ export const toggleCityHubCompanySponsored = async (cityId, companySlug) => {
   }
 };
 
-export const fetchAllCityHubCompaniesAdmin = async ({ q = "", page = 1, limit = 50 } = {}) => {
+export const fetchAllCityHubCompaniesAdmin = async ({ q = "", page = 1, limit = 50, hubSlug } = {}) => {
   try {
     const params = new URLSearchParams();
     if (String(q).trim()) params.set("q", String(q).trim());
     params.set("page", String(Math.max(1, page)));
     params.set("limit", String(Math.min(100, Math.max(1, limit))));
+    if (hubSlug) params.set("hubSlug", hubSlug);
     const response = await fetch(`${API_BASE_URL}/cities/hub-companies?${params}`, {
       headers: authHeaders(),
       credentials: "include",
@@ -314,11 +316,12 @@ export const updateCityHubCompany = async (cityId, companySlug, formData) => {
   }
 };
 
-export const uploadCityCompaniesSheet = async (file, citySlug) => {
+export const uploadCityCompaniesSheet = async (file, citySlug, hubSlug) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("citySlug", citySlug);
+    if (hubSlug) formData.append("hubSlug", hubSlug);
     const response = await fetch(`${API_BASE_URL}/cities/upload-companies`, {
       method: "POST",
       headers: authHeaders(),

@@ -89,7 +89,7 @@ function rowToForm(row) {
   };
 }
 
-export default function AllHubCompaniesTab() {
+export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) {
   const [q, setQ] = useState("");
   const [debouncedQ, setDebouncedQ] = useState("");
   const [page, setPage] = useState(1);
@@ -122,6 +122,7 @@ export default function AllHubCompaniesTab() {
       q: debouncedQ,
       page,
       limit: PAGE_SIZE,
+      hubSlug,
     });
     if (res.data?.ok && Array.isArray(res.data.data)) {
       setRows(res.data.data);
@@ -139,7 +140,7 @@ export default function AllHubCompaniesTab() {
       setTotalPages(1);
     }
     setLoading(false);
-  }, [debouncedQ, page]);
+  }, [debouncedQ, page, hubSlug]);
 
   useEffect(() => {
     load();
@@ -369,7 +370,7 @@ export default function AllHubCompaniesTab() {
                             )}
                           </button>
                           <a
-                            href={`${FRONTEND_BASE}/managed-service-providers/${row.citySlug}/${row.slug}`}
+                            href={`${FRONTEND_BASE}${basePath}/${row.citySlug}/${row.slug}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-[#0356A6] hover:bg-[#F5FAFF]"
