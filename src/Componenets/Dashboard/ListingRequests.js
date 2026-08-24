@@ -19,6 +19,8 @@ export default function ListingRequests() {
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [adminNote, setAdminNote] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [actionSuccess, setActionSuccess] = useState("");
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -46,6 +48,8 @@ export default function ListingRequests() {
 
   const updateStatus = async (id, status) => {
     setActionLoading(true);
+    setActionError("");
+    setActionSuccess("");
     try {
       const res = await fetch(`${API}/api/v1/listing-requests/${id}/status`, {
         method: "PATCH",
@@ -54,13 +58,21 @@ export default function ListingRequests() {
         body: JSON.stringify({ status, adminNote }),
       });
       const data = await res.json();
-      if (data.ok) {
-        setSelected(null);
-        setAdminNote("");
-        fetchRequests();
+      if (!data.ok) {
+        setActionError(data.message || "No city found");
+        return;
       }
+      if (status === "approved" && data.published) {
+        setActionSuccess(`Approved and added to ${data.published.cityName}`);
+      } else if (status === "approved") {
+        setActionSuccess("Approved");
+      }
+      setSelected(null);
+      setAdminNote("");
+      fetchRequests();
     } catch (err) {
       console.error(err);
+      setActionError("Something went wrong. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -99,6 +111,17 @@ export default function ListingRequests() {
         </select>
       </div>
 
+      {actionSuccess && (
+        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800">
+          {actionSuccess}
+        </div>
+      )}
+      {actionError && !selected && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {actionError}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-16">
           <div className="h-8 w-8 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
@@ -123,6 +146,9 @@ export default function ListingRequests() {
                   <div>
                     <h3 className="font-bold text-gray-800">{req.companyName}</h3>
                     <p className="text-xs text-gray-500 mt-0.5">{req.website || "No website"} · {req.companySize || "Size N/A"}</p>
+                    <p className="text-xs text-gray-500">
+                      City: <span className="font-semibold text-gray-700">{req.requestedCity || "Not specified"}</span>
+                    </p>
                     <p className="text-xs text-gray-500">{req.contactEmail} · {req.personOfContact} ({req.jobTitle})</p>
                     <div className="mt-2 flex flex-wrap gap-1">
                       {req.services?.slice(0, 4).map((s) => (
@@ -137,7 +163,7 @@ export default function ListingRequests() {
                   <span className={`rounded-full border px-3 py-1 text-xs font-bold capitalize ${STATUS_COLORS[req.status]}`}>
                     {req.status}
                   </span>
-                  <button onClick={() => { setSelected(req); setAdminNote(req.adminNote || ""); }}
+                  <button onClick={() => { setSelected(req); setAdminNote(req.adminNote || ""); setActionError(""); }}
                     className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition">
                     Review
                   </button>
@@ -171,7 +197,7 @@ export default function ListingRequests() {
 
       {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={() => setSelected(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={() => { setSelected(null); setActionError(""); }}>
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between mb-5">
               <div className="flex items-center gap-4">
@@ -241,6 +267,11 @@ export default function ListingRequests() {
             </div>
 
             <div className="mt-5 border-t border-gray-100 pt-4">
+              {actionError && (
+                <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+                  {actionError}
+                </div>
+              )}
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Admin Note</label>
               <textarea rows={2} value={adminNote} onChange={(e) => setAdminNote(e.target.value)}
                 placeholder="Internal note (optional)..."
@@ -260,7 +291,7 @@ export default function ListingRequests() {
                 className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 transition">
                 Mark Pending
               </button>
-              <button onClick={() => setSelected(null)}
+              <button onClick={() => { setSelected(null); setActionError(""); }}
                 className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
                 Close
               </button>
