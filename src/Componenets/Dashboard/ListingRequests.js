@@ -63,7 +63,13 @@ export default function ListingRequests() {
         return;
       }
       if (status === "approved" && data.published) {
-        setActionSuccess(`Approved and added to ${data.published.cityName}`);
+        setActionSuccess(
+          `Approved and added to Managed IT — /msp/${data.published.citySlug}${
+            selected?.requestedCountrySlug
+              ? ` and /top-msps/${selected.requestedCountrySlug}`
+              : ""
+          }`,
+        );
       } else if (status === "approved") {
         setActionSuccess("Approved");
       }
@@ -98,6 +104,9 @@ export default function ListingRequests() {
         <div>
           <h2 className="text-xl font-bold text-gray-800">Listing Requests</h2>
           <p className="text-sm text-gray-500">{total} total requests</p>
+          <p className="text-xs text-gray-400 mt-1">
+            Approve adds the company to Managed IT (city + country pages filter from there). Duplicate names are skipped.
+          </p>
         </div>
         <select
           value={statusFilter}
@@ -148,6 +157,8 @@ export default function ListingRequests() {
                     <p className="text-xs text-gray-500 mt-0.5">{req.website || "No website"} · {req.companySize || "Size N/A"}</p>
                     <p className="text-xs text-gray-500">
                       City: <span className="font-semibold text-gray-700">{req.requestedCity || "Not specified"}</span>
+                      {" · "}
+                      Country: <span className="font-semibold text-gray-700">{req.requestedCountry || "Not specified"}</span>
                     </p>
                     <p className="text-xs text-gray-500">{req.contactEmail} · {req.personOfContact} ({req.jobTitle})</p>
                     <div className="mt-2 flex flex-wrap gap-1">
@@ -217,6 +228,7 @@ export default function ListingRequests() {
             <div className="space-y-3 text-sm text-gray-700">
               {[
                 ["Requested City", selected.requestedCity],
+                ["Requested Country", selected.requestedCountry],
                 ["Website", selected.website],
                 ["LinkedIn", selected.linkedinUrl],
                 ["Phone", selected.phone],

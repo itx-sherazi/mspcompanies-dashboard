@@ -7,6 +7,7 @@ import {
   fetchManagedItAdmin,
   deleteManagedItCompany,
   deleteAllManagedIt,
+  wipeListingCompanies,
 } from "@/services/api";
 import {
   Upload,
@@ -43,6 +44,11 @@ export default function ManagedItServicesManagement() {
   const [uploadFile, setUploadFile] = useState(null);
   const [tab, setTab]               = useState("list"); // "list" | "upload"
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
+  const [wipeOpen, setWipeOpen] = useState(false);
+  const [wipeText, setWipeText] = useState("");
+  const [wiping, setWiping] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
+  const [replaceConfirm, setReplaceConfirm] = useState(false);
   const fileRef = useRef(null);
 
   const load = useCallback(async (p = 1, q = "") => {
@@ -69,16 +75,21 @@ export default function ManagedItServicesManagement() {
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!uploadFile) { toast.error("Select an Excel file first"); return; }
+    if (uploadMode === "replace" && !replaceConfirm) {
+      toast.error("Replace mode: confirm the checkbox first. This deletes all existing companies.");
+      return;
+    }
     setUploading(true);
     const res = await uploadManagedItSheet(uploadFile, uploadMode);
     setUploading(false);
     if (res.data?.ok) {
-      toast.success(res.data.message || "Upload successful");
+      setUploadResult(res.data);
+      toast.success(res.data.message || "Upload complete");
       setUploadFile(null);
       if (fileRef.current) fileRef.current.value = "";
-      setTab("list");
       load(1, "");
     } else {
+      setUploadResult(null);
       toast.error(res.data?.message || "Upload failed");
     }
   };
@@ -105,6 +116,24 @@ export default function ManagedItServicesManagement() {
     }
   };
 
+  const handleWipeListings = async () => {
+    if (wipeText.trim() !== "DELETE_COMPANIES") {
+      toast.error("Type DELETE_COMPANIES exactly to confirm");
+      return;
+    }
+    setWiping(true);
+    const res = await wipeListingCompanies();
+    setWiping(false);
+    if (res.data?.ok) {
+      toast.success(res.data.message);
+      setWipeOpen(false);
+      setWipeText("");
+      load(1, "");
+    } else {
+      toast.error(res.data?.message || "Wipe failed");
+    }
+  };
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -115,7 +144,7 @@ export default function ManagedItServicesManagement() {
             Managed IT Services Directory
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total.toLocaleString()} companies · /managed-it-services
+            {total.toLocaleString()} companies · this sheet also fills /msp cities and /top-msps countries
           </p>
         </div>
         <div className="flex gap-2">
@@ -134,6 +163,68 @@ export default function ManagedItServicesManagement() {
         </div>
       </div>
 
+      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <p className="text-sm font-semibold text-red-800">Wipe listing companies</p>
+        <p className="text-xs text-red-700/80 mt-1 mb-3">
+          Deletes companies only from Managed IT Services, all /msp city pages, and /top-msps country pages.
+          City/country pages, SEO, Cyber, and MSSP stay.
+        </p>
+        <button
+          type="button"
+          onClick={() => { setWipeOpen(true); setWipeText(""); }}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+        >
+          Delete MIT + city + Top MSPs companies
+        </button>
+      </div>
+
+      {wipeOpen && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <AlertTriangle size={22} className="text-red-500" />
+              <h3 className="font-bold text-gray-800">Delete listing companies?</h3>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              This permanently removes companies from:
+            </p>
+            <ul className="text-sm text-gray-700 list-disc pl-5 mb-4 space-y-1">
+              <li>/managed-it-services</li>
+              <li>Every /msp city page</li>
+              <li>Every /top-msps country page</li>
+            </ul>
+            <p className="text-xs text-gray-500 mb-3">
+              Type <span className="font-mono font-semibold text-red-700">DELETE_COMPANIES</span> to confirm.
+            </p>
+            <input
+              value={wipeText}
+              onChange={(e) => setWipeText(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm mb-4 font-mono"
+              placeholder="DELETE_COMPANIES"
+              autoComplete="off"
+            />
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setWipeOpen(false); setWipeText(""); }}
+                className="flex-1 py-2 border rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                disabled={wiping}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleWipeListings}
+                disabled={wiping || wipeText.trim() !== "DELETE_COMPANIES"}
+                className="flex-1 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-40"
+              >
+                {wiping ? "Deleting…" : "Delete companies"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Upload Tab */}
       {tab === "upload" && (
         <div className="bg-white rounded-xl border p-6 shadow-sm max-w-xl">
@@ -142,7 +233,8 @@ export default function ManagedItServicesManagement() {
             Upload Excel Sheet
           </h2>
           <p className="text-xs text-gray-500 mb-4">
-            Sheet must have these columns (any order):
+            One master sheet feeds /managed-it-services, /msp/{"{city}"} (Company City),
+            and /top-msps/{"{country}"} (Company Country). Columns (any order):
           </p>
           <div className="flex flex-wrap gap-1 mb-5">
             {REQUIRED_COLUMNS.map((c) => (
@@ -155,9 +247,9 @@ export default function ManagedItServicesManagement() {
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Upload Mode</label>
               <div className="flex gap-4">
-                {[["append", "Append / Upsert", "Add new, update existing by slug"], ["replace", "Replace All", "Delete everything, then insert fresh"]].map(([val, label, desc]) => (
+                {[["append", "Append (skip duplicates)", "Add new names only. Same company name already in DB is skipped."], ["replace", "Replace All", "Delete everything, then insert unique names from this sheet"]].map(([val, label, desc]) => (
                   <label key={val} className={`flex-1 cursor-pointer rounded-lg border p-3 text-sm transition ${uploadMode === val ? "border-[#1d4882] bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
-                    <input type="radio" value={val} checked={uploadMode === val} onChange={() => setUploadMode(val)} className="mr-2" />
+                    <input type="radio" value={val} checked={uploadMode === val} onChange={() => { setUploadMode(val); setReplaceConfirm(false); }} className="mr-2" />
                     <span className="font-semibold">{label}</span>
                     <p className="text-xs text-gray-500 mt-0.5 ml-5">{desc}</p>
                   </label>
@@ -177,20 +269,62 @@ export default function ManagedItServicesManagement() {
                 <p className="text-xs text-green-600 mt-1 font-medium">✓ {uploadFile.name}</p>
               )}
             </div>
+            {uploadMode === "append" && (
+              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+                Purani companies <strong>remove nahi hongi</strong>. Sheet ki nayi names add hongi;
+                jo naam already database mein hai wo skip ho jayegi.
+              </div>
+            )}
             {uploadMode === "replace" && (
-              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                <span>Replace mode will <strong>delete all existing companies</strong> before inserting. This cannot be undone.</span>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  <span>Replace mode will <strong>delete all existing companies</strong> before inserting. This cannot be undone. Daily new sheets ke liye Append use karo.</span>
+                </div>
+                <label className="flex items-start gap-2 text-xs text-amber-900">
+                  <input
+                    type="checkbox"
+                    checked={replaceConfirm}
+                    onChange={(e) => setReplaceConfirm(e.target.checked)}
+                    className="mt-0.5"
+                  />
+                  I understand this deletes the current MIT list.
+                </label>
               </div>
             )}
             <button
               type="submit"
-              disabled={uploading || !uploadFile}
+              disabled={uploading || !uploadFile || (uploadMode === "replace" && !replaceConfirm)}
               className="w-full py-2.5 bg-[#1d4882] text-white rounded-lg font-semibold text-sm hover:bg-[#163a6e] transition disabled:opacity-60 flex items-center justify-center gap-2"
             >
               {uploading ? <><RefreshCw size={14} className="animate-spin" /> Uploading…</> : <><Upload size={14} /> Upload Companies</>}
             </button>
           </form>
+          {uploadResult?.stats && (
+            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
+              <p className="font-semibold text-emerald-900 mb-2">Upload result</p>
+              <ul className="space-y-1">
+                <li>Mode: <strong>{uploadResult.stats.mode === "replace" ? "Replace (old list deleted)" : "Append (old list kept)"}</strong></li>
+                {uploadResult.stats.mode !== "replace" && (
+                  <li>Pehle se database mein (rehin): <strong>{uploadResult.stats.keptExisting ?? 0}</strong></li>
+                )}
+                <li>Sheet mein companies: <strong>{uploadResult.stats.sheetRows}</strong></li>
+                <li>Nayi upload: <strong>{uploadResult.stats.uploaded}</strong></li>
+                <li>Ab total database: <strong>{uploadResult.stats.totalAfter ?? uploadResult.stats.uploaded}</strong></li>
+                <li>Duplicate skip: <strong>{uploadResult.stats.skippedDuplicates}</strong>
+                  {uploadResult.stats.skippedDuplicates > 0 && (
+                    <span className="text-emerald-800/80">
+                      {" "}({uploadResult.stats.skippedExisting} already in database, {uploadResult.stats.skippedSheetDuplicates} repeat name in sheet)
+                    </span>
+                  )}
+                </li>
+                {uploadResult.stats.skippedEmpty > 0 && (
+                  <li>Empty / invalid rows: <strong>{uploadResult.stats.skippedEmpty}</strong></li>
+                )}
+              </ul>
+              <p className="mt-2 text-xs text-emerald-800">{uploadResult.message}</p>
+            </div>
+          )}
         </div>
       )}
 
