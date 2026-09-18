@@ -7,17 +7,25 @@ import {
   createCityAdmin,
   updateCityAdmin,
   deleteCityAdmin,
+  deleteCityHubCompany,
+  uploadCityCompaniesSheet,
 } from "@/services/api";
+import AllHubCompaniesTab from "../CityHub/AllHubCompaniesTab";
 import CityContentEditor from "../CityHub/CityContentEditor";
 import {
   Globe,
   Plus,
+  Upload,
   Trash2,
   Eye,
   EyeOff,
   ExternalLink,
+  FileSpreadsheet,
   Info,
   Pencil,
+  Users,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 
 const FRONTEND_BASE =
@@ -40,9 +48,15 @@ export default function CountryHubManagement() {
     faqs: [],
   });
   const [editingContentCountry, setEditingContentCountry] = useState(null);
+  const [uploadTarget, setUploadTarget] = useState(null);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [companiesTarget, setCompaniesTarget] = useState(null);
+  const [removingCompanySlug, setRemovingCompanySlug] = useState(null);
+  const [mainTab, setMainTab] = useState("countries");
 
   const refreshCountries = useCallback(async () => {
     setLoading(true);
@@ -125,7 +139,7 @@ export default function CountryHubManagement() {
   const handleDelete = async (country) => {
     if (
       !confirm(
-        `Delete country page "${country.name}"? The public /top-msps/${country.slug} page and its SEO will be removed. Companies stay in Managed IT.`,
+        `Delete country "${country.name}"? All uploaded companies on this country page will be removed with it.`,
       )
     )
       return;
@@ -195,6 +209,56 @@ export default function CountryHubManagement() {
     }
   };
 
+  const handleRemoveHubCompany = async (country, company) => {
+    const label = company.companyName || company.slug || "this company";
+    if (
+      !confirm(
+        `Remove "${label}" from "${country.name}" only? This does not delete the company from the main MSP directory.`,
+      )
+    )
+      return;
+    const slug = company.slug;
+    if (!slug) {
+      toast.error("Missing company slug");
+      return;
+    }
+    setRemovingCompanySlug(slug);
+    const res = await deleteCityHubCompany(country._id, slug);
+    setRemovingCompanySlug(null);
+    if (res.data?.ok) {
+      toast.success(res.data.message || "Company removed from country");
+      setCompaniesTarget((t) =>
+        t && t._id === country._id
+          ? {
+              ...t,
+              hubCompanies: (t.hubCompanies || []).filter(
+                (c) => String(c.slug).toLowerCase() !== String(slug).toLowerCase(),
+              ),
+            }
+          : t,
+      );
+      refreshCountries();
+    } else {
+      toast.error(res.data?.message || "Remove failed");
+    }
+  };
+
+  const handleUpload = async (e) => {
+    e.preventDefault();
+    if (!uploadTarget || !uploadFile) return;
+    setUploading(true);
+    const res = await uploadCityCompaniesSheet(uploadFile, uploadTarget.slug, HUB_SLUG);
+    setUploading(false);
+    if (res.data?.ok) {
+      toast.success(res.data.message || "Upload complete");
+      setUploadTarget(null);
+      setUploadFile(null);
+      refreshCountries();
+    } else {
+      toast.error(res.data?.message || "Upload failed");
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div className="rounded-2xl bg-linear-to-br from-[#0356A6] to-[#0A2E65] p-6 sm:p-8 text-white shadow-lg">
@@ -210,16 +274,48 @@ export default function CountryHubManagement() {
               Public URLs:{" "}
               <code className="bg-black/20 px-2 py-0.5 rounded text-xs sm:text-sm">
                 /top-msps/your-country
+              </code>{" "}
+              and{" "}
+              <code className="bg-black/20 px-2 py-0.5 rounded text-xs sm:text-sm">
+                /top-msps/country/company
               </code>
-              . Create and edit country SEO here. Company cards come from the{" "}
-              <strong>Managed IT master sheet</strong>{" "}
-              (<code className="bg-black/20 px-1.5 py-0.5 rounded text-xs">Company Country</code>
-              {" "}e.g. United States → /top-msps/united-states).
+              . Uploaded companies stay <strong>only</strong> on these pages
+              they are <strong>not</strong> added to the main MSP service
+              directory.
             </p>
           </div>
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        <button
+          type="button"
+          onClick={() => setMainTab("countries")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            mainTab === "countries"
+              ? "bg-[#0356A6] text-white shadow-md"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <LayoutGrid className="w-4 h-4 shrink-0" />
+          Countries & uploads
+        </button>
+        <button
+          type="button"
+          onClick={() => setMainTab("allCompanies")}
+          className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+            mainTab === "allCompanies"
+              ? "bg-[#0356A6] text-white shadow-md"
+              : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+          }`}
+        >
+          <List className="w-4 h-4 shrink-0" />
+          All country companies
+        </button>
+      </div>
+
+      {mainTab === "countries" ? (
+        <>
       <div className="grid lg:grid-cols-2 gap-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
@@ -404,24 +500,35 @@ export default function CountryHubManagement() {
           </form>
         </div>
 
-        <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm">
-          <h3 className="font-semibold text-blue-900 flex items-center gap-2">
-            <Info className="w-5 h-5" />
-            Companies come from Managed IT
+        <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-6 shadow-sm">
+          <h3 className="font-semibold text-amber-900 flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Excel upload (country only)
           </h3>
-          <ul className="mt-3 text-sm text-blue-950/90 space-y-2 list-disc pl-5">
+          <ul className="mt-3 text-sm text-amber-950/90 space-y-2 list-disc pl-5">
             <li>
-              Upload the master Excel in <strong>Managed IT Services</strong>.
+              Sheet name: <strong>Companies</strong>. Columns: Company Name,
+              Company Address, Phone Number, Company City, Company State,
+              Country, ZIP Code, Revenue Size, Employees Size, Industry,
+              Website, Services, Technologies, Company Linkedin Url,
+              FaceBook URL, Twitter URL, LOGO, Short Description, Founded Year.
             </li>
             <li>
-              <code className="bg-white/70 px-1 rounded">Company Country</code>{" "}
-              must match this country name (United States → /top-msps/united-states).
+              <strong>Company Name</strong> required; <strong>unlimited</strong>{" "}
+              rows for country pages.
             </li>
             <li>
-              This screen only manages the country page: URL, H1, meta, content,
-              FAQ.
+              Row order = order on the country page. Data is stored only on
+              this country <strong>not</strong> in the main MSP directory.
             </li>
           </ul>
+          <div className="mt-4 flex items-start gap-2 text-xs text-amber-900/80">
+            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>
+              Same upload format as City hub pages, plus Revenue Size,
+              Company State and Country columns.
+            </span>
+          </div>
         </div>
       </div>
 
@@ -429,7 +536,7 @@ export default function CountryHubManagement() {
         <div className="border-b border-slate-100 px-6 py-4 bg-slate-50/80">
           <h2 className="text-lg font-semibold text-slate-900">Countries</h2>
           <p className="text-sm text-slate-500 mt-0.5">
-            SEO and publish only. Company cards are filtered from the Managed IT master sheet.
+            Upload a sheet per country. Companies appear only under that country URL.
           </p>
         </div>
         {loading ? (
@@ -461,13 +568,9 @@ export default function CountryHubManagement() {
                   <div className="text-sm text-slate-500 mt-1 font-mono">
                     {BASE_PATH}/{country.slug}
                   </div>
-                  <div
-                    className={`text-xs mt-1 font-medium ${
-                      (country.companyCount || 0) > 0 ? "text-emerald-700" : "text-amber-700"
-                    }`}
-                  >
-                    {country.companyCount || 0} {(country.companyCount || 0) === 1 ? "company" : "companies"}
-                    {(country.companyCount || 0) === 0 ? " — none on this country page yet" : ""}
+                  <div className="text-xs text-slate-400 mt-1">
+                    {country.companyCount ?? country.hubCompanies?.length ?? 0}{" "}
+                    companies on this country page
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -494,6 +597,22 @@ export default function CountryHubManagement() {
                   >
                     <Pencil className="w-4 h-4" />
                     Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompaniesTarget(country)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                  >
+                    <Users className="w-4 h-4" />
+                    Companies
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadTarget(country)}
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#0356A6] px-3 py-2 text-sm font-medium text-white hover:bg-[#024486]"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload sheet
                   </button>
                   <button
                     type="button"
@@ -524,6 +643,11 @@ export default function CountryHubManagement() {
           </ul>
         )}
       </div>
+
+        </>
+      ) : (
+        <AllHubCompaniesTab hubSlug={HUB_SLUG} basePath={BASE_PATH} />
+      )}
 
       {editTarget && editForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
@@ -716,6 +840,105 @@ export default function CountryHubManagement() {
                   className="px-4 py-2 rounded-lg bg-[#0356A6] text-white text-sm font-semibold disabled:opacity-50"
                 >
                   {savingEdit ? "Saving…" : "Save changes"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {companiesTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 border border-slate-200 max-h-[85vh] flex flex-col">
+            <h3 className="text-xl font-bold text-slate-900 shrink-0">
+              Companies {companiesTarget.name}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1 shrink-0">
+              Remove a row to drop it from this country page only. Upload a new
+              sheet to replace the full list.
+            </p>
+            <ul className="mt-4 space-y-2 overflow-y-auto flex-1 min-h-0">
+              {(companiesTarget.hubCompanies || []).length === 0 ? (
+                <li className="text-sm text-slate-500 py-6 text-center">
+                  No companies yet. Use Upload sheet.
+                </li>
+              ) : (
+                (companiesTarget.hubCompanies || []).map((c) => (
+                  <li
+                    key={c.slug}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-slate-900 truncate">
+                        {c.companyName || c.slug}
+                      </div>
+                      <div className="text-xs text-slate-500 font-mono truncate">
+                        {c.slug}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={removingCompanySlug === c.slug}
+                      onClick={() =>
+                        handleRemoveHubCompany(companiesTarget, c)
+                      }
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1.5 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {removingCompanySlug === c.slug ? "…" : "Remove"}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+            <div className="flex justify-end mt-4 shrink-0">
+              <button
+                type="button"
+                className="px-4 py-2 rounded-lg border border-slate-200 text-sm"
+                onClick={() => setCompaniesTarget(null)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {uploadTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
+            <h3 className="text-xl font-bold text-slate-900">
+              Upload companies {uploadTarget.name}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1">
+              Sheet <strong>Companies</strong>, unlimited rows. Replaces the current
+              list for this country only.
+            </p>
+            <form onSubmit={handleUpload} className="mt-4 space-y-4">
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                required
+                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                className="w-full text-sm"
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border border-slate-200 text-sm"
+                  onClick={() => {
+                    setUploadTarget(null);
+                    setUploadFile(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploading}
+                  className="px-4 py-2 rounded-lg bg-[#0356A6] text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {uploading ? "Uploading…" : "Upload"}
                 </button>
               </div>
             </form>
