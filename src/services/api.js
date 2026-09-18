@@ -724,6 +724,22 @@ export const deleteManagedItCompany = async (slug) => {
   }
 };
 
+export const wipeListingCompanies = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/wipe-listing-companies`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      credentials: "include",
+      body: JSON.stringify({ confirm: "DELETE_COMPANIES" }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Wipe failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
 export const deleteAllManagedIt = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/admin/managed-it-services/all`, {
