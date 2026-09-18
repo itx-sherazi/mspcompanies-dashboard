@@ -144,7 +144,7 @@ export default function ManagedItServicesManagement() {
             Managed IT Services Directory
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total.toLocaleString()} companies · this sheet also fills /msp cities and /top-msps countries
+            {total.toLocaleString()} companies · feeds /managed-it-services only (city & country hubs use their own sheets)
           </p>
         </div>
         <div className="flex gap-2">
@@ -233,8 +233,8 @@ export default function ManagedItServicesManagement() {
             Upload Excel Sheet
           </h2>
           <p className="text-xs text-gray-500 mb-4">
-            One master sheet feeds /managed-it-services, /msp/{"{city}"} (Company City),
-            and /top-msps/{"{country}"} (Company Country). Columns (any order):
+            This sheet feeds <code className="bg-gray-100 px-1 rounded">/managed-it-services</code> only.
+            City and country hub pages use their own Excel uploads. Columns (any order):
           </p>
           <div className="flex flex-wrap gap-1 mb-5">
             {REQUIRED_COLUMNS.map((c) => (
