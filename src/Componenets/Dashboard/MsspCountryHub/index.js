@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
   fetchCitiesAdmin,
+  fetchCityAdmin,
   createCityAdmin,
   updateCityAdmin,
   deleteCityAdmin,
@@ -55,6 +56,7 @@ export default function MsspCountryHubManagement() {
   const [editForm, setEditForm] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [companiesTarget, setCompaniesTarget] = useState(null);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
   const [removingCompanySlug, setRemovingCompanySlug] = useState(null);
   const [mainTab, setMainTab] = useState("countries");
 
@@ -206,6 +208,28 @@ export default function MsspCountryHubManagement() {
       refreshCountries();
     } else {
       toast.error(res.data?.message || "Update failed");
+    }
+  };
+
+  const openContentEditor = async (country) => {
+    const res = await fetchCityAdmin(country._id, { include: "content" });
+    if (res.data?.ok && res.data.data) {
+      setEditingContentCountry(res.data.data);
+    } else {
+      toast.error(res.data?.message || "Could not load country content");
+    }
+  };
+
+  const openCompaniesModal = async (country) => {
+    setCompaniesLoading(true);
+    setCompaniesTarget({ ...country, hubCompanies: [] });
+    const res = await fetchCityAdmin(country._id, { include: "companies" });
+    setCompaniesLoading(false);
+    if (res.data?.ok && res.data.data) {
+      setCompaniesTarget(res.data.data);
+    } else {
+      setCompaniesTarget(null);
+      toast.error(res.data?.message || "Could not load companies");
     }
   };
 
@@ -585,7 +609,7 @@ export default function MsspCountryHubManagement() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => setEditingContentCountry(country)}
+                    onClick={() => openContentEditor(country)}
                     className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-800 hover:bg-purple-100"
                   >
                     Content
@@ -600,7 +624,7 @@ export default function MsspCountryHubManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCompaniesTarget(country)}
+                    onClick={() => openCompaniesModal(country)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                   >
                     <Users className="w-4 h-4" />
@@ -858,7 +882,11 @@ export default function MsspCountryHubManagement() {
               sheet to replace the full list.
             </p>
             <ul className="mt-4 space-y-2 overflow-y-auto flex-1 min-h-0">
-              {(companiesTarget.hubCompanies || []).length === 0 ? (
+              {companiesLoading ? (
+                <li className="text-sm text-slate-500 py-6 text-center">
+                  Loading companies…
+                </li>
+              ) : (companiesTarget.hubCompanies || []).length === 0 ? (
                 <li className="text-sm text-slate-500 py-6 text-center">
                   No companies yet. Use Upload sheet.
                 </li>

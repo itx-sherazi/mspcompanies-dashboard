@@ -202,6 +202,24 @@ export const fetchCitiesAdmin = async (hubSlug) => {
   }
 };
 
+/** Load one city. include: "content" | "companies" | "all" (comma-separated). */
+export const fetchCityAdmin = async (id, { include } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (include) params.set("include", include);
+    const qs = params.toString() ? `?${params}` : "";
+    const response = await fetch(`${API_BASE_URL}/cities/${id}${qs}`, {
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to fetch city");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
 export const createCityAdmin = async (payload) => {
   try {
     const response = await fetch(`${API_BASE_URL}/cities`, {
