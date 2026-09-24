@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User, CheckCircle, XCircle, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signinUser } from "@/services/api";
-import { toast } from "react-hot-toast";
 import { handleApiError, showSuccess } from "@/utils/errorHandler";
 
 const UserAddPage = () => {
@@ -49,8 +48,8 @@ const UserAddPage = () => {
     
     if (!signUpData.password) {
       newErrors.password = "Password is required";
-    } else if (signUpData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters";
+    } else if (signUpData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
     }
 
     setErrors(newErrors);

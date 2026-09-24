@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { Users, Mail, Phone, MessageSquare, DollarSign, Hash, Trash2, Eye, X } from "lucide-react";
 import { deleteRequestById, fetchRequest } from "@/services/api";
 
@@ -34,7 +34,7 @@ export default function DatasetRequests() {
         if (requests.length > 0) {
           toast.success(`Loaded ${requests.length} requests`);
         } else {
-          toast("No requests found", { icon: "ℹ️" });
+          toast.info("No requests found");
         }
       } catch (err) {
         console.error('Error fetching requests:', err);
@@ -475,7 +475,6 @@ export default function DatasetRequests() {
         </div>
       )}
 
-      <Toaster position="top-right" />
     </div>
   );
 }

@@ -39,7 +39,7 @@ export const signinUser = async (signinData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/signin`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify(signinData),
     });
@@ -196,6 +196,24 @@ export const fetchCitiesAdmin = async (hubSlug) => {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Failed to fetch cities");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};
+
+/** Load one city. include: "content" | "companies" | "all" (comma-separated). */
+export const fetchCityAdmin = async (id, { include } = {}) => {
+  try {
+    const params = new URLSearchParams();
+    if (include) params.set("include", include);
+    const qs = params.toString() ? `?${params}` : "";
+    const response = await fetch(`${API_BASE_URL}/cities/${id}${qs}`, {
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to fetch city");
     return { status: response.status, data };
   } catch (error) {
     return { status: 500, data: { ok: false, message: error.message } };

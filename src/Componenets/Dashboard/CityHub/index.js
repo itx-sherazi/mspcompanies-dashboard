@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
   fetchCitiesAdmin,
+  fetchCityAdmin,
   createCityAdmin,
   updateCityAdmin,
   deleteCityAdmin,
@@ -52,6 +53,7 @@ export default function CityHubManagement() {
   const [editForm, setEditForm] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [companiesTarget, setCompaniesTarget] = useState(null);
+  const [companiesLoading, setCompaniesLoading] = useState(false);
   const [removingCompanySlug, setRemovingCompanySlug] = useState(null);
   const [mainTab, setMainTab] = useState("cities");
 
@@ -203,6 +205,28 @@ export default function CityHubManagement() {
       refreshCities();
     } else {
       toast.error(res.data?.message || "Update failed");
+    }
+  };
+
+  const openContentEditor = async (city) => {
+    const res = await fetchCityAdmin(city._id, { include: "content" });
+    if (res.data?.ok && res.data.data) {
+      setEditingContentCity(res.data.data);
+    } else {
+      toast.error(res.data?.message || "Could not load city content");
+    }
+  };
+
+  const openCompaniesModal = async (city) => {
+    setCompaniesLoading(true);
+    setCompaniesTarget({ ...city, hubCompanies: [] });
+    const res = await fetchCityAdmin(city._id, { include: "companies" });
+    setCompaniesLoading(false);
+    if (res.data?.ok && res.data.data) {
+      setCompaniesTarget(res.data.data);
+    } else {
+      setCompaniesTarget(null);
+      toast.error(res.data?.message || "Could not load companies");
     }
   };
 
@@ -581,7 +605,7 @@ export default function CityHubManagement() {
                   </a>
                   <button
                     type="button"
-                    onClick={() => setEditingContentCity(city)}
+                    onClick={() => openContentEditor(city)}
                     className="inline-flex items-center gap-1 rounded-lg border border-purple-200 bg-purple-50 px-3 py-2 text-sm font-medium text-purple-800 hover:bg-purple-100"
                   >
                     Content
@@ -596,7 +620,7 @@ export default function CityHubManagement() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCompaniesTarget(city)}
+                    onClick={() => openCompaniesModal(city)}
                     className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                   >
                     <Users className="w-4 h-4" />
@@ -854,7 +878,11 @@ export default function CityHubManagement() {
               sheet to replace the full list.
             </p>
             <ul className="mt-4 space-y-2 overflow-y-auto flex-1 min-h-0">
-              {(companiesTarget.hubCompanies || []).length === 0 ? (
+              {companiesLoading ? (
+                <li className="text-sm text-slate-500 py-6 text-center">
+                  Loading companies…
+                </li>
+              ) : (companiesTarget.hubCompanies || []).length === 0 ? (
                 <li className="text-sm text-slate-500 py-6 text-center">
                   No companies yet. Use Upload sheet.
                 </li>

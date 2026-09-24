@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from 'react-hot-toast';
+import ToastContainerConfig from "@/Componenets/ui/ToastContainerConfig";
 
 
 
@@ -14,16 +14,7 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 5000,
-            style: {
-              background: '#333',
-              color: '#fff',
-            },
-          }}
-        />
+        <ToastContainerConfig />
       </body>
     </html>
   );
