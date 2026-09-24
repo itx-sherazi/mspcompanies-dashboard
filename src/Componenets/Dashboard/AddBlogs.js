@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Editor } from "@tinymce/tinymce-react";
 import { AddBlog, updateBlog } from "@/services/api";
-import { toast } from "react-hot-toast";
+import { toast } from "react-toastify";
 import { handleApiError, showSuccess } from "@/utils/errorHandler";
 import Image from "next/image";
 import axios from "axios";

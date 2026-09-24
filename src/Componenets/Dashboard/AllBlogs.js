@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import { deleteBlog, fetchBlog, fetchBlogById } from "../../services/api";
 import { Trash2, Search, ChevronLeft, ChevronRight, Tag, FolderOpen, Key, Edit } from "lucide-react";
-import toast, { Toaster } from "react-hot-toast";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 import Image from "next/image";
 
 export default function Blog({ onEdit }) {
@@ -353,7 +352,6 @@ export default function Blog({ onEdit }) {
         </div>
       )}
 
-      <Toaster position="top-right" />
     </div>
   );
 }

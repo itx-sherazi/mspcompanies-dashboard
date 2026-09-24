@@ -39,7 +39,7 @@ export const signinUser = async (signinData) => {
   try {
     const response = await fetch(`${API_BASE_URL}/signin`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       credentials: "include",
       body: JSON.stringify(signinData),
     });
