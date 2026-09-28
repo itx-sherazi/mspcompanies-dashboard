@@ -772,3 +772,42 @@ export const deleteAllManagedIt = async () => {
     return { status: 500, data: { ok: false, message: error.message } };
   }
 };
+
+// ── Company data quality (bad characters + duplicates) ──────────
+
+async function companyQualityRequest(path, { method = "GET", body } = {}) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/company-quality${path}`, {
+      method,
+      headers: authHeaders(body ? { "Content-Type": "application/json" } : {}),
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Request failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+}
+
+export const fetchCompanyQualitySources = () => companyQualityRequest("/sources");
+
+/** params: { source, field, char, q, page, limit } */
+export const fetchBadCharCompanies = (params = {}) =>
+  companyQualityRequest(`/bad-chars?${new URLSearchParams(params)}`);
+
+/** params: { source, by: "name" | "linkedin" | "both", status, q, page, limit } */
+export const fetchDuplicateCompanies = (params = {}) =>
+  companyQualityRequest(`/duplicates?${new URLSearchParams(params)}`);
+
+/** set: { companyName?, description?, linkedinUrl?, website? } */
+export const updateQualityCompany = (source, id, set) =>
+  companyQualityRequest("/company", { method: "PATCH", body: { source, id, set } });
+
+/** payload: { items: [{ source, id }], removeEmoji } or { all: true, source, char, removeEmoji } */
+export const autoFixCompanies = (payload) =>
+  companyQualityRequest("/fix", { method: "POST", body: payload });
+
+export const deleteQualityCompanies = (items) =>
+  companyQualityRequest("/delete", { method: "POST", body: { items } });

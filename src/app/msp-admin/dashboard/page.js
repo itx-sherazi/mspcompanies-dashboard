@@ -15,6 +15,7 @@ import ListingRequests from "@/Componenets/Dashboard/ListingRequests";
 import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServices";
 import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
 import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
+import CompanyQuality from "@/Componenets/Dashboard/CompanyQuality";
 
 // Tabs visible to the "seo" role  must match Sidebar.js's SEO_ALLOWED_TABS.
 const SEO_ALLOWED_TABS = new Set([
@@ -26,6 +27,7 @@ const SEO_ALLOWED_TABS = new Set([
   "ManagedIT",
   "CyberSecurity",
   "VendorDirectory",
+  "CompanyQuality",
 ]);
 
 export default function Dashboard() {
@@ -98,6 +100,8 @@ export default function Dashboard() {
         return <CyberSecurityManagement />;
       case "VendorDirectory":
         return <VendorDirectory />;
+      case "CompanyQuality":
+        return <CompanyQuality />;
       default:
         return <AllBlogs onEdit={handleEditBlog} />;
     }

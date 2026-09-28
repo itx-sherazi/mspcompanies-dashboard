@@ -12,6 +12,7 @@ import {
   FaBuilding,
   FaShieldAlt,
   FaLayerGroup,
+  FaBroom,
 } from "react-icons/fa";
 
 // Tabs visible to the "seo" role  everything else is admin-only.
@@ -24,6 +25,7 @@ const SEO_ALLOWED_TABS = new Set([
   "ManagedIT",
   "CyberSecurity",
   "VendorDirectory",
+  "CompanyQuality",
 ]);
 
 export default function Sidebar({
@@ -158,6 +160,16 @@ export default function Sidebar({
             label="Vendor Directory"
             isActive={activeTab === "VendorDirectory"}
             onClick={() => setActiveTab("VendorDirectory")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("CompanyQuality") && (
+          <SidebarButton
+            icon={<FaBroom size={20} />}
+            label="Data Quality"
+            isActive={activeTab === "CompanyQuality"}
+            onClick={() => setActiveTab("CompanyQuality")}
             sidebarOpen={sidebarOpen}
           />
         )}
