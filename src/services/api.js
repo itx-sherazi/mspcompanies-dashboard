@@ -815,3 +815,24 @@ export const autoFixCompanies = (payload) =>
 
 export const deleteQualityCompanies = (items) =>
   companyQualityRequest("/delete", { method: "POST", body: { items } });
+
+/** Keep the first (best) company in every duplicate group matching { source, by, status, q }; delete the rest. */
+export const dedupeCompanies = (filters) =>
+  companyQualityRequest("/dedupe", { method: "POST", body: filters });
+
+// ── Dashboard overview ──────────
+
+/** Headline counts, leads (admin only) and recently updated pages. */
+export const fetchOverview = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/overview`, {
+      headers: authHeaders(),
+      credentials: "include",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "Failed to load overview");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message } };
+  }
+};

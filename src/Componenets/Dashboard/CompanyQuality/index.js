@@ -10,6 +10,7 @@ import {
   updateQualityCompany,
   autoFixCompanies,
   deleteQualityCompanies,
+  dedupeCompanies,
 } from "@/services/api";
 import {
   AlertTriangle,
@@ -217,14 +218,14 @@ const HAD_ISSUES_KEY = "companyQuality.pagesWithIssues";
 function readHadIssues() {
   try {
     return new Set(JSON.parse(localStorage.getItem(HAD_ISSUES_KEY) || "[]"));
-  } catch (_) {
+  } catch {
     return new Set();
   }
 }
 function saveHadIssues(set) {
   try {
     localStorage.setItem(HAD_ISSUES_KEY, JSON.stringify([...set]));
-  } catch (_) {}
+  } catch {}
 }
 
 /** "issues" | "fixed" | "clean" for one page. */
@@ -564,6 +565,7 @@ function BadCharsTab({ q, removeEmoji, onEdit, reloadKey, onCount }) {
 
 function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
   const [by, setBy] = useState("name");
+  const [scope, setScope] = useState("page");
   const [status, setStatus] = useState("");
   const [groups, setGroups] = useState([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1, scanned: 0, statusCounts: {}, duplicateCompanies: 0 });
@@ -573,14 +575,14 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
 
   const load = useCallback(async (page = 1) => {
     setLoading(true);
-    const res = await fetchDuplicateCompanies(clean({ source, by, status, q, page, limit: 20 }));
+    const res = await fetchDuplicateCompanies(clean({ source, by, scope, status, q, page, limit: 20 }));
     setLoading(false);
     if (!res.data?.ok) return toast.error(res.data?.message || "Could not load duplicates");
     setGroups(res.data.data);
     setMeta(res.data);
     setSelected(new Set());
-    if (!status && !q && by === "name") onCount(res.data.total);
-  }, [source, by, status, q, onCount]);
+    if (!status && !q && by === "name" && scope === "page") onCount(res.data.total);
+  }, [source, by, scope, status, q, onCount]);
 
   useEffect(() => { load(1); }, [load, reloadKey]);
 
@@ -590,9 +592,10 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
     return n;
   });
 
-  const remove = async (companies) => {
-    const names = companies.map((c) => `• ${c.companyName} — ${c.sourceLabel}${c.cityName ? ` / ${c.cityName}` : ""}`).join("\n");
-    if (!window.confirm(`Delete ${companies.length} ${companies.length === 1 ? "company" : "companies"}?\n\n${names}`)) return;
+  const remove = async (companies, intro = "") => {
+    const lines = companies.map((c) => `• ${c.companyName} — ${c.sourceLabel}${c.cityName ? ` / ${c.cityName}` : ""}`);
+    const names = lines.slice(0, 15).join("\n") + (lines.length > 15 ? `\n…and ${lines.length - 15} more` : "");
+    if (!window.confirm(`${intro}Permanently delete ${companies.length} ${companies.length === 1 ? "company" : "companies"}?\n\n${names}`)) return;
     setBusy(true);
     const res = await deleteQualityCompanies(companies.map(itemRef));
     setBusy(false);
@@ -601,6 +604,23 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
       load(meta.page);
     } else {
       toast.error(res.data?.message || "Delete failed");
+    }
+  };
+
+  // Every group matching the current filters (all result pages): keep the first, delete the rest.
+  const dedupeAll = async () => {
+    const answer = window.prompt(
+      `This keeps 1 company in each of ${meta.total} duplicate groups and PERMANENTLY deletes ${meta.toDelete} companies from the live site.\n\nType DELETE to confirm.`,
+    );
+    if (answer?.trim() !== "DELETE") return;
+    setBusy(true);
+    const res = await dedupeCompanies(clean({ source, by, scope, status, q }));
+    setBusy(false);
+    if (res.data?.ok) {
+      toast.success(res.data.message);
+      load(1);
+    } else {
+      toast.error(res.data?.message || "Cleanup failed");
     }
   };
 
@@ -642,6 +662,28 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
         )}
       </div>
 
+      <div className="bg-white rounded-xl border p-4 flex flex-wrap items-center gap-3">
+        <span className="text-sm font-semibold text-gray-800">Scope</span>
+        {[
+          ["page", "Same page only", "Same company listed 2+ times on ONE page (e.g. twice on /msp/houston)"],
+          ["all", "Across all pages", "Same company on different pages too (e.g. Miami page + Florida page + Managed IT)"],
+        ].map(([k, label, hint]) => (
+          <button
+            key={k}
+            title={hint}
+            onClick={() => { setScope(k); setStatus(""); }}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium border ${scope === k ? "bg-[#1d4882] text-white border-[#1d4882]" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+          >
+            {label}
+          </button>
+        ))}
+        {scope === "all" && (
+          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">
+            Deleting here removes the company from the other pages (e.g. its city page or the Managed IT directory).
+          </span>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <button
           disabled={busy || !selectedCompanies.length}
@@ -650,7 +692,14 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
         >
           <Trash2 size={14} /> Delete selected ({selectedCompanies.length})
         </button>
-        <span className="text-xs text-gray-500">Tip: “Keep first, select rest” selects every listing in a group except the first one.</span>
+        <button
+          disabled={busy || !meta.total}
+          onClick={dedupeAll}
+          className="ml-auto px-3 py-1.5 rounded-lg bg-red-700 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
+          title="For every group below (all pages): keep the company marked KEEP and delete the rest"
+        >
+          <Trash2 size={14} /> Keep first, delete rest in all {meta.total} groups ({meta.toDelete || 0} companies)
+        </button>
       </div>
 
       {loading ? (
@@ -668,22 +717,22 @@ function DuplicatesTab({ source, q, onEdit, reloadKey, onCount }) {
                   <span className="text-sm text-gray-500">{g.count} listings</span>
                   <span title={s.hint} className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.cls}`}>{s.label}</span>
                   <button
-                    onClick={() => setSelected((prev) => {
-                      const n = new Set(prev);
-                      g.companies.forEach((c, i) => (i === 0 ? n.delete(c.id) : n.add(c.id)));
-                      return n;
-                    })}
-                    className="ml-auto text-xs font-semibold text-[#1d4882] hover:underline"
+                    disabled={busy}
+                    onClick={() => remove(g.companies.slice(1), `Keeping: ${g.companies[0].companyName} — ${g.companies[0].sourceLabel}${g.companies[0].cityName ? ` / ${g.companies[0].cityName}` : ""}\n\n`)}
+                    className="ml-auto px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-40 inline-flex items-center gap-1.5"
                   >
-                    Keep first, select rest
+                    <Trash2 size={13} /> Keep first, delete rest ({g.count - 1})
                   </button>
                 </div>
                 <div className="divide-y">
                   {g.companies.map((c) => (
-                    <div key={c.id} className="flex items-start gap-3 px-4 py-3">
+                    <div key={c.id} className={`flex items-start gap-3 px-4 py-3 ${c.keep ? "bg-green-50/60" : ""}`}>
                       <input type="checkbox" className="mt-1.5" checked={selected.has(c.id)} onChange={() => toggle(c.id)} />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 flex items-center gap-2">
+                          {c.keep && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-600 text-white font-bold" title="Most complete listing: this one stays">KEEP</span>
+                          )}
                           {c.companyName}
                           {c.badChars && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-semibold">bad characters</span>

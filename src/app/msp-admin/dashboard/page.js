@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/Componenets/Dashboard/Sidebar";
 import Header from "@/Componenets/Dashboard/Header";
@@ -16,9 +16,11 @@ import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServic
 import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
 import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
 import CompanyQuality from "@/Componenets/Dashboard/CompanyQuality";
+import Overview from "@/Componenets/Dashboard/Overview";
 
 // Tabs visible to the "seo" role  must match Sidebar.js's SEO_ALLOWED_TABS.
 const SEO_ALLOWED_TABS = new Set([
+  "Overview",
   "blog",
   "Addblog",
   "CityHub",
@@ -31,7 +33,7 @@ const SEO_ALLOWED_TABS = new Set([
 ]);
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState("blog");
+  const [activeTab, setActiveTab] = useState("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [editingBlog, setEditingBlog] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
@@ -52,7 +54,7 @@ export default function Dashboard() {
   // (e.g. stale state), fall back to a tab they're allowed to see.
   useEffect(() => {
     if (role === "seo" && !SEO_ALLOWED_TABS.has(activeTab)) {
-      setActiveTab("blog");
+      setActiveTab("Overview");
     }
   }, [role, activeTab]);
 
@@ -65,8 +67,13 @@ export default function Dashboard() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Stable so Overview's data loaders don't re-run on every render.
+  const canSee = useCallback((tab) => role !== "seo" || SEO_ALLOWED_TABS.has(tab), [role]);
+
   const renderActiveTab = () => {
     switch (activeTab) {
+      case "Overview":
+        return <Overview setActiveTab={setActiveTab} canSee={canSee} />;
       case "blog":
         return <AllBlogs onEdit={handleEditBlog} />;
       case "Addblog":
@@ -103,7 +110,7 @@ export default function Dashboard() {
       case "CompanyQuality":
         return <CompanyQuality />;
       default:
-        return <AllBlogs onEdit={handleEditBlog} />;
+        return <Overview setActiveTab={setActiveTab} canSee={canSee} />;
     }
   };
 

@@ -13,10 +13,12 @@ import {
   FaShieldAlt,
   FaLayerGroup,
   FaBroom,
+  FaTachometerAlt,
 } from "react-icons/fa";
 
 // Tabs visible to the "seo" role  everything else is admin-only.
 const SEO_ALLOWED_TABS = new Set([
+  "Overview",
   "blog",
   "Addblog",
   "CityHub",
@@ -54,6 +56,16 @@ export default function Sidebar({
       {/* Navigation Buttons */}
       <div className="flex flex-col mt-6 space-y-2 px-2">
         
+        {show("Overview") && (
+          <SidebarButton
+            icon={<FaTachometerAlt size={20} />}
+            label="Overview"
+            isActive={activeTab === "Overview"}
+            onClick={() => setActiveTab("Overview")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
         {show("blog") && (
           <SidebarButton
             icon={<FaRegNewspaper size={20} />}
