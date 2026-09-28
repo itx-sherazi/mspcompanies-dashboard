@@ -230,7 +230,7 @@ function saveHadIssues(set) {
 /** "issues" | "fixed" | "clean" for one page. */
 const pageState = (p, hadIssues) => (p.bad > 0 ? "issues" : hadIssues.has(p.key) ? "fixed" : "clean");
 
-function PageList({ pages, hadIssues, selected, onSelect, loading }) {
+function PageList({ pages, hadIssues, selected, onSelect, loading, error, onRetry }) {
   const [group, setGroup] = useState("");
   const [search, setSearch] = useState("");
   const [onlyIssues, setOnlyIssues] = useState(true);
@@ -271,7 +271,14 @@ function PageList({ pages, hadIssues, selected, onSelect, loading }) {
           All pages
         </button>
         {loading && pages.length === 0 && <p className="px-3 py-6 text-sm text-gray-500 text-center">Loading pages…</p>}
-        {!loading && shown.length === 0 && (
+        {!loading && error && (
+          <div className="px-3 py-6 text-center">
+            <p className="text-sm font-semibold text-red-700">Could not scan pages</p>
+            <p className="text-xs text-red-600 mt-1 break-words">{error}</p>
+            <button onClick={onRetry} className="mt-3 px-3 py-1.5 rounded-lg bg-[#1d4882] text-white text-xs font-semibold">Retry</button>
+          </div>
+        )}
+        {!loading && !error && shown.length === 0 && (
           <p className="px-3 py-6 text-sm text-green-700 text-center">No pages with issues 🎉</p>
         )}
         {shown.map((p) => {
@@ -311,6 +318,7 @@ function BadCharsTab({ q, removeEmoji, onEdit, reloadKey, onCount }) {
   const [pages, setPages] = useState([]);
   const [hadIssues, setHadIssues] = useState(new Set());
   const [pagesLoading, setPagesLoading] = useState(true);
+  const [pagesError, setPagesError] = useState("");
   const [target, setTarget] = useState("");
   const [rows, setRows] = useState([]);
   const [chars, setChars] = useState([]);
@@ -325,7 +333,11 @@ function BadCharsTab({ q, removeEmoji, onEdit, reloadKey, onCount }) {
     setPagesLoading(true);
     const res = await fetchQualityPages(refresh);
     setPagesLoading(false);
-    if (!res.data?.ok) return toast.error(res.data?.message || "Could not load pages");
+    if (!res.data?.ok) {
+      setPagesError(res.data?.message || "Request failed");
+      return toast.error(res.data?.message || "Could not load pages");
+    }
+    setPagesError("");
     const had = readHadIssues();
     res.data.data.forEach((p) => p.bad > 0 && had.add(p.key));
     saveHadIssues(had);
@@ -398,7 +410,7 @@ function BadCharsTab({ q, removeEmoji, onEdit, reloadKey, onCount }) {
 
   return (
     <div className="grid lg:grid-cols-[300px_1fr] gap-4 items-start">
-      <PageList pages={pages} hadIssues={hadIssues} selected={target} onSelect={selectPage} loading={pagesLoading} />
+      <PageList pages={pages} hadIssues={hadIssues} selected={target} onSelect={selectPage} loading={pagesLoading} error={pagesError} onRetry={() => loadPages(true)} />
 
       <div className="space-y-4 min-w-0">
         <div className="bg-white rounded-xl border p-4 flex flex-wrap items-center justify-between gap-3">
