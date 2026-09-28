@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
   fetchCompanyQualitySources,
+  fetchQualityPages,
   fetchBadCharCompanies,
   fetchDuplicateCompanies,
   updateQualityCompany,
@@ -22,6 +23,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
+  CheckCircle2,
   X,
 } from "lucide-react";
 
@@ -210,29 +212,152 @@ function EditModal({ company, onClose, onSaved }) {
   );
 }
 
-function BadCharsTab({ source, q, removeEmoji, onEdit, reloadKey, onCount }) {
+// Pages that had bad characters at some point, so they can be shown as "Fixed" once clean.
+const HAD_ISSUES_KEY = "companyQuality.pagesWithIssues";
+function readHadIssues() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(HAD_ISSUES_KEY) || "[]"));
+  } catch (_) {
+    return new Set();
+  }
+}
+function saveHadIssues(set) {
+  try {
+    localStorage.setItem(HAD_ISSUES_KEY, JSON.stringify([...set]));
+  } catch (_) {}
+}
+
+/** "issues" | "fixed" | "clean" for one page. */
+const pageState = (p, hadIssues) => (p.bad > 0 ? "issues" : hadIssues.has(p.key) ? "fixed" : "clean");
+
+function PageList({ pages, hadIssues, selected, onSelect, loading }) {
+  const [group, setGroup] = useState("");
+  const [search, setSearch] = useState("");
+  const [onlyIssues, setOnlyIssues] = useState(true);
+
+  const groups = [...new Map(pages.map((p) => [p.group, p.groupLabel])).entries()];
+  const rank = { issues: 0, fixed: 1, clean: 2 };
+  const needle = search.trim().toLowerCase();
+  const shown = pages
+    .filter((p) => !group || p.group === group)
+    .filter((p) => !onlyIssues || pageState(p, hadIssues) !== "clean")
+    .filter((p) => !needle || p.name.toLowerCase().includes(needle) || p.path.includes(needle))
+    .sort((a, b) =>
+      rank[pageState(a, hadIssues)] - rank[pageState(b, hadIssues)] || b.bad - a.bad || a.name.localeCompare(b.name));
+
+  return (
+    <div className="bg-white rounded-xl border flex flex-col lg:max-h-[calc(100vh-220px)]">
+      <div className="p-3 border-b space-y-2">
+        <select value={group} onChange={(e) => setGroup(e.target.value)} className="w-full border rounded-lg px-2.5 py-1.5 text-sm">
+          <option value="">All page types</option>
+          {groups.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        </select>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Find a page (city, country)…"
+          className="w-full border rounded-lg px-2.5 py-1.5 text-sm"
+        />
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          <input type="checkbox" checked={onlyIssues} onChange={(e) => setOnlyIssues(e.target.checked)} />
+          Only pages with issues (and fixed ones)
+        </label>
+      </div>
+      <div className="overflow-y-auto divide-y">
+        <button
+          onClick={() => onSelect("")}
+          className={`w-full text-left px-3 py-2.5 text-sm font-semibold ${selected === "" ? "bg-blue-50 text-[#1d4882]" : "hover:bg-gray-50"}`}
+        >
+          All pages
+        </button>
+        {loading && pages.length === 0 && <p className="px-3 py-6 text-sm text-gray-500 text-center">Loading pages…</p>}
+        {!loading && shown.length === 0 && (
+          <p className="px-3 py-6 text-sm text-green-700 text-center">No pages with issues 🎉</p>
+        )}
+        {shown.map((p) => {
+          const state = pageState(p, hadIssues);
+          return (
+            <button
+              key={p.key}
+              onClick={() => onSelect(p.key)}
+              className={`w-full text-left px-3 py-2.5 flex items-center gap-2 transition ${
+                selected === p.key ? "bg-blue-50 ring-1 ring-inset ring-[#1d4882]" : state === "fixed" ? "bg-green-50 hover:bg-green-100" : "hover:bg-gray-50"
+              }`}
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{p.name}</p>
+                <p className="text-[11px] text-gray-500 truncate">
+                  {p.path}{!p.isPublished && " · unpublished"}
+                </p>
+              </div>
+              {state === "issues" && (
+                <span className="shrink-0 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-semibold">{p.bad}/{p.total}</span>
+              )}
+              {state === "fixed" && (
+                <span className="shrink-0 px-2 py-0.5 rounded-full bg-green-600 text-white text-xs font-semibold inline-flex items-center gap-1">
+                  <CheckCircle2 size={12} /> Fixed
+                </span>
+              )}
+              {state === "clean" && <span className="shrink-0 text-xs text-gray-400">Clean</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BadCharsTab({ q, removeEmoji, onEdit, reloadKey, onCount }) {
+  const [pages, setPages] = useState([]);
+  const [hadIssues, setHadIssues] = useState(new Set());
+  const [pagesLoading, setPagesLoading] = useState(true);
+  const [target, setTarget] = useState("");
   const [rows, setRows] = useState([]);
   const [chars, setChars] = useState([]);
-  const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1, scanned: 0 });
+  const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1 });
   const [field, setField] = useState("");
   const [char, setChar] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
 
+  const loadPages = useCallback(async (refresh = false) => {
+    setPagesLoading(true);
+    const res = await fetchQualityPages(refresh);
+    setPagesLoading(false);
+    if (!res.data?.ok) return toast.error(res.data?.message || "Could not load pages");
+    const had = readHadIssues();
+    res.data.data.forEach((p) => p.bad > 0 && had.add(p.key));
+    saveHadIssues(had);
+    setHadIssues(had);
+    setPages(res.data.data);
+    onCount(res.data.totalBad);
+  }, [onCount]);
+
   const load = useCallback(async (page = 1) => {
     setLoading(true);
-    const res = await fetchBadCharCompanies(clean({ source, field, char, q, page, limit: 25 }));
+    const res = await fetchBadCharCompanies(clean({ target, field, char, q, page, limit: 25 }));
     setLoading(false);
     if (!res.data?.ok) return toast.error(res.data?.message || "Could not load companies");
     setRows(res.data.data);
     setChars(res.data.chars);
     setMeta(res.data);
     setSelected(new Set());
-    if (!char && !field && !q) onCount(res.data.total);
-  }, [source, field, char, q, onCount]);
+  }, [target, field, char, q]);
 
+  // Rescan button / after an edit: refresh the page list, then the companies.
+  useEffect(() => { loadPages(reloadKey > 0); }, [loadPages, reloadKey]);
   useEffect(() => { load(1); }, [load, reloadKey]);
+
+  const selectPage = (key) => {
+    setTarget(key);
+    setChar("");
+  };
+
+  const afterChange = async () => {
+    await loadPages();
+    load(meta.page);
+  };
 
   const toggle = (id) => setSelected((s) => {
     const n = new Set(s);
@@ -249,7 +374,7 @@ function BadCharsTab({ source, q, removeEmoji, onEdit, reloadKey, onCount }) {
     setBusy(false);
     if (res.data?.ok) {
       toast.success(res.data.message);
-      load(meta.page);
+      afterChange();
     } else {
       toast.error(res.data?.message || "Fix failed");
     }
@@ -262,122 +387,165 @@ function BadCharsTab({ source, q, removeEmoji, onEdit, reloadKey, onCount }) {
     setBusy(false);
     if (res.data?.ok) {
       toast.success(res.data.message);
-      load(meta.page);
+      afterChange();
     } else {
       toast.error(res.data?.message || "Delete failed");
     }
   };
 
+  const current = pages.find((p) => p.key === target);
+  const currentState = current ? pageState(current, hadIssues) : null;
+
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-xl border p-4 space-y-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm font-semibold text-gray-800">
-            Bad characters found <span className="text-gray-400 font-normal">· click one to see the companies that have it</span>
-          </p>
-          <select value={field} onChange={(e) => setField(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm">
-            <option value="">All fields</option>
-            {Object.entries(FIELD_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
+    <div className="grid lg:grid-cols-[300px_1fr] gap-4 items-start">
+      <PageList pages={pages} hadIssues={hadIssues} selected={target} onSelect={selectPage} loading={pagesLoading} />
+
+      <div className="space-y-4 min-w-0">
+        <div className="bg-white rounded-xl border p-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-bold text-gray-900">{current ? current.name : "All pages"}</p>
+            <p className="text-xs text-gray-500">
+              {current ? (
+                <>
+                  {current.groupLabel} ·{" "}
+                  <a href={`${SITE}${current.path}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-1">
+                    {current.path} <ExternalLink size={11} />
+                  </a>{" "}
+                  · {current.total} companies
+                </>
+              ) : (
+                `${pages.filter((p) => p.bad > 0).length} pages have companies with bad characters`
+              )}
+            </p>
+          </div>
+          <button
+            disabled={busy || !meta.total}
+            onClick={() => fix(
+              { all: true, target, char },
+              `Auto-fix ${char ? `"${char}" in ` : ""}all ${meta.total} companies ${current ? `on ${current.name}` : "on every page"}?`,
+            )}
+            className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
+          >
+            <Wand2 size={14} /> Auto-fix all {meta.total} {current ? "on this page" : ""}
+          </button>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {chars.length === 0 && !loading && <span className="text-sm text-green-700 flex items-center gap-1"><ShieldCheck size={16} /> No bad characters found</span>}
-          {chars.map((c) => (
+
+        {current && currentState !== "issues" && !loading && (
+          <div className={`rounded-xl border p-5 flex items-center gap-3 ${currentState === "fixed" ? "bg-green-50 border-green-300" : "bg-gray-50"}`}>
+            <CheckCircle2 size={28} className="text-green-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-800">
+                {currentState === "fixed" ? "Is page ka issue fix ho gaya ✓" : "Is page pe koi bad character nahi hai"}
+              </p>
+              <p className="text-sm text-gray-600">All {current.total} companies on {current.path} have clean text.</p>
+            </div>
+          </div>
+        )}
+
+        {(chars.length > 0 || field) && (
+          <div className="bg-white rounded-xl border p-4 space-y-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-sm font-semibold text-gray-800">
+                Bad characters <span className="text-gray-400 font-normal">· click one to filter</span>
+              </p>
+              <select value={field} onChange={(e) => setField(e.target.value)} className="border rounded-lg px-3 py-1.5 text-sm">
+                <option value="">All fields</option>
+                {Object.entries(FIELD_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {chars.map((c) => (
+                <button
+                  key={c.seq}
+                  onClick={() => setChar(char === c.seq ? "" : c.seq)}
+                  className={`px-2.5 py-1 rounded-lg border text-sm font-mono transition ${char === c.seq ? "bg-[#1d4882] text-white border-[#1d4882]" : "bg-red-50 border-red-200 text-red-800 hover:bg-red-100"}`}
+                  title={`Auto-fix turns it into: ${c.fixed || "(removed)"}`}
+                >
+                  {c.seq} <span className="opacity-60">→ {c.fixed || "∅"}</span> <span className="font-sans font-semibold">({c.count})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {rows.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
+              <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)))} />
+              Select all on this list
+            </label>
             <button
-              key={c.seq}
-              onClick={() => setChar(char === c.seq ? "" : c.seq)}
-              className={`px-2.5 py-1 rounded-lg border text-sm font-mono transition ${char === c.seq ? "bg-[#1d4882] text-white border-[#1d4882]" : "bg-red-50 border-red-200 text-red-800 hover:bg-red-100"}`}
-              title={`Auto-fix turns it into: ${c.fixed || "(removed)"}`}
+              disabled={busy || !selectedItems.length}
+              onClick={() => fix({ items: selectedItems })}
+              className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
             >
-              {c.seq} <span className="opacity-60">→ {c.fixed || "∅"}</span> <span className="font-sans font-semibold">({c.count})</span>
+              <Wand2 size={14} /> Auto-fix selected ({selectedItems.length})
             </button>
-          ))}
-        </div>
-      </div>
+            <button
+              disabled={busy || !selectedItems.length}
+              onClick={() => remove(selectedItems, `${selectedItems.length} companies`)}
+              className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
+            >
+              <Trash2 size={14} /> Delete selected
+            </button>
+          </div>
+        )}
 
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex items-center gap-2 text-sm text-gray-700 mr-2">
-          <input type="checkbox" checked={allSelected} onChange={() => setSelected(allSelected ? new Set() : new Set(rows.map((r) => r.id)))} />
-          Select page
-        </label>
-        <button
-          disabled={busy || !selectedItems.length}
-          onClick={() => fix({ items: selectedItems })}
-          className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
-        >
-          <Wand2 size={14} /> Auto-fix selected ({selectedItems.length})
-        </button>
-        <button
-          disabled={busy || !selectedItems.length}
-          onClick={() => remove(selectedItems, `${selectedItems.length} companies`)}
-          className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
-        >
-          <Trash2 size={14} /> Delete selected
-        </button>
-        <button
-          disabled={busy || !meta.total}
-          onClick={() => fix(
-            { all: true, source, char },
-            `Auto-fix ${char ? `"${char}" in ` : "bad characters in "}all ${meta.total} matching companies?`,
-          )}
-          className="ml-auto px-3 py-1.5 rounded-lg border border-green-600 text-green-700 text-sm font-semibold disabled:opacity-40 inline-flex items-center gap-1.5"
-        >
-          <Wand2 size={14} /> Auto-fix all {meta.total} {char && <span className="font-mono">({char})</span>}
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="py-16 text-center text-gray-500">Scanning companies…</div>
-      ) : (
-        <div className="space-y-3">
-          {rows.map((r) => (
-            <div key={r.id} className="bg-white rounded-xl border p-4">
-              <div className="flex items-start gap-3">
-                <input type="checkbox" className="mt-1.5" checked={selected.has(r.id)} onChange={() => toggle(r.id)} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900">{r.companyName}</p>
-                      <CompanyMeta c={r} />
+        {loading ? (
+          <div className="py-16 text-center text-gray-500">Loading companies…</div>
+        ) : (
+          <div className="space-y-3">
+            {rows.map((r) => (
+              <div key={r.id} className="bg-white rounded-xl border p-4">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" className="mt-1.5" checked={selected.has(r.id)} onChange={() => toggle(r.id)} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-gray-900">{r.companyName}</p>
+                        <CompanyMeta c={r} />
+                      </div>
+                      <div className="flex gap-1.5 shrink-0">
+                        <button disabled={busy} onClick={() => fix({ items: [itemRef(r)] })} title="Auto-fix and mark done" className="px-2.5 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 text-xs font-semibold inline-flex items-center gap-1">
+                          <Wand2 size={15} /> Fix
+                        </button>
+                        <button onClick={() => onEdit(r)} title="Edit" className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100">
+                          <Pencil size={16} />
+                        </button>
+                        <button disabled={busy} onClick={() => remove([itemRef(r)], `"${r.companyName}"`)} title="Delete" className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      <button disabled={busy} onClick={() => fix({ items: [itemRef(r)] })} title="Auto-fix" className="p-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100">
-                        <Wand2 size={16} />
-                      </button>
-                      <button onClick={() => onEdit(r)} title="Edit" className="p-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100">
-                        <Pencil size={16} />
-                      </button>
-                      <button disabled={busy} onClick={() => remove([itemRef(r)], `"${r.companyName}"`)} title="Delete" className="p-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-3 space-y-3">
-                    {r.issues.map((i) => (
-                      <div key={i.field} className="text-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
-                          {FIELD_LABELS[i.field] || i.field} · <span className="font-mono normal-case text-red-700">{i.bad.join("  ")}</span>
-                        </p>
-                        <div className="grid md:grid-cols-2 gap-2">
-                          <div className="bg-red-50/50 border border-red-100 rounded-lg p-2.5 max-h-40 overflow-y-auto whitespace-pre-wrap text-gray-800">
-                            <Highlighted text={i.value} bad={i.bad} />
-                          </div>
-                          <div className="bg-green-50/60 border border-green-100 rounded-lg p-2.5 max-h-40 overflow-y-auto whitespace-pre-wrap text-gray-800">
-                            <span className="block text-[10px] font-semibold text-green-700 uppercase mb-1">After auto-fix</span>
-                            {i.fixed}
+                    <div className="mt-3 space-y-3">
+                      {r.issues.map((i) => (
+                        <div key={i.field} className="text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-1">
+                            {FIELD_LABELS[i.field] || i.field} · <span className="font-mono normal-case text-red-700">{i.bad.join("  ")}</span>
+                          </p>
+                          <div className="grid md:grid-cols-2 gap-2">
+                            <div className="bg-red-50/50 border border-red-100 rounded-lg p-2.5 max-h-40 overflow-y-auto whitespace-pre-wrap text-gray-800">
+                              <Highlighted text={i.value} bad={i.bad} />
+                            </div>
+                            <div className="bg-green-50/60 border border-green-100 rounded-lg p-2.5 max-h-40 overflow-y-auto whitespace-pre-wrap text-gray-800">
+                              <span className="block text-[10px] font-semibold text-green-700 uppercase mb-1">After auto-fix</span>
+                              {i.fixed}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      <Pager page={meta.page} totalPages={meta.totalPages} total={meta.total} onPage={load} noun={`companies with bad characters (of ${meta.scanned.toLocaleString()} scanned)`} />
+        {meta.total > 0 && (
+          <Pager page={meta.page} totalPages={meta.totalPages} total={meta.total} onPage={load} noun="companies with bad characters" />
+        )}
+      </div>
     </div>
   );
 }
@@ -581,17 +749,19 @@ export default function CompanyQuality() {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <select value={source} onChange={(e) => setSource(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white">
-          <option value="all">All sources</option>
-          {sources.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-        </select>
+        {tab === "duplicates" && (
+          <select value={source} onChange={(e) => setSource(e.target.value)} className="border rounded-lg px-3 py-2 text-sm bg-white">
+            <option value="all">All sources</option>
+            {sources.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+        )}
         <form onSubmit={(e) => { e.preventDefault(); setQ(search.trim().toLowerCase()); }} className="flex items-center gap-2 flex-1 min-w-[240px]">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search name, city, LinkedIn, website…"
+              placeholder={tab === "badChars" ? "Search companies on the selected page…" : "Search name, city, LinkedIn, website…"}
               className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm bg-white"
             />
           </div>
@@ -609,7 +779,7 @@ export default function CompanyQuality() {
       </div>
 
       {tab === "badChars" ? (
-        <BadCharsTab source={source} q={q} removeEmoji={removeEmoji} onEdit={setEditing} reloadKey={reloadKey} onCount={setBadCount} />
+        <BadCharsTab q={q} removeEmoji={removeEmoji} onEdit={setEditing} reloadKey={reloadKey} onCount={setBadCount} />
       ) : (
         <DuplicatesTab source={source} q={q} onEdit={setEditing} reloadKey={reloadKey} onCount={setDupCount} />
       )}

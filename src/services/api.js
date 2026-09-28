@@ -793,7 +793,11 @@ async function companyQualityRequest(path, { method = "GET", body } = {}) {
 
 export const fetchCompanyQualitySources = () => companyQualityRequest("/sources");
 
-/** params: { source, field, char, q, page, limit } */
+/** Every public listing page with its bad-character count. refresh=true rescans instead of using the cache. */
+export const fetchQualityPages = (refresh = false) =>
+  companyQualityRequest(`/pages${refresh ? "?refresh=1" : ""}`);
+
+/** params: { target: "city:<id>" | "mit" | "cyber", field, char, q, page, limit } */
 export const fetchBadCharCompanies = (params = {}) =>
   companyQualityRequest(`/bad-chars?${new URLSearchParams(params)}`);
 
@@ -805,7 +809,7 @@ export const fetchDuplicateCompanies = (params = {}) =>
 export const updateQualityCompany = (source, id, set) =>
   companyQualityRequest("/company", { method: "PATCH", body: { source, id, set } });
 
-/** payload: { items: [{ source, id }], removeEmoji } or { all: true, source, char, removeEmoji } */
+/** payload: { items: [{ source, id }], removeEmoji } or { all: true, target, char, removeEmoji } */
 export const autoFixCompanies = (payload) =>
   companyQualityRequest("/fix", { method: "POST", body: payload });
 
