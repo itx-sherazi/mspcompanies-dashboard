@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Star,
 } from "lucide-react";
+import ProfileFields, { profileFormDefaults, appendProfileFields } from "./ProfileFields";
 
 const PAGE_SIZE = 50;
 
@@ -55,6 +56,7 @@ function emptyForm() {
     sicCodes: "",
     technologies: "",
     vars: "",
+    ...profileFormDefaults(),
   };
 }
 
@@ -86,6 +88,7 @@ function rowToForm(row) {
     sicCodes: arrToCsv(row.sicCodes),
     technologies: arrToCsv(row.technologies),
     vars: row.vars || "",
+    ...profileFormDefaults(row),
   };
 }
 
@@ -203,6 +206,7 @@ export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) 
       fd.append(key, form[key] ?? "");
     }
     if (logoFile) fd.append("image", logoFile);
+    appendProfileFields(fd, form);
 
     setSaving(true);
     const res = await updateCityHubCompany(
@@ -370,7 +374,7 @@ export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) 
                             )}
                           </button>
                           <a
-                            href={`${FRONTEND_BASE}${basePath}/${row.citySlug}/${row.slug}`}
+                            href={basePath === "/top-mssp" ? `${FRONTEND_BASE}${basePath}/${row.citySlug}/${row.slug}` : `${FRONTEND_BASE}/managed-it-services/${row.slug}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-[#0356A6] hover:bg-[#F5FAFF]"
@@ -450,8 +454,9 @@ export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) 
               Edit company {editRow.cityName}
             </h3>
             <p className="text-sm text-slate-500 mt-1">
-              Changes apply only to this city hub listing. Lists use commas
-              between items (services, tags, etc.).
+              Changes are saved on this listing, on the main directory profile and on the
+              other pages that show the same company (sponsored copies are not touched).
+              Lists use commas between items (services, tags, etc.).
             </p>
 
             <form onSubmit={handleSave} className="mt-4 space-y-4">
@@ -514,6 +519,8 @@ export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) 
                   />
                 </div>
               </div>
+
+              <ProfileFields form={form} setForm={setForm} />
 
               <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4 space-y-3">
                 <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">

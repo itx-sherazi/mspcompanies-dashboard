@@ -13,6 +13,7 @@ import {
   Globe2,
   FileText,
   ClipboardList,
+  UserCheck,
   AlertTriangle,
   CheckCircle2,
   Copy,
@@ -31,6 +32,7 @@ import {
   FaGlobeAmericas,
   FaGlobe,
   FaListAlt,
+  FaUserCheck,
   FaBuilding,
   FaShieldAlt,
   FaLayerGroup,
@@ -53,6 +55,7 @@ const SECTIONS = [
   { tab: "Addblog", label: "Add Blog", hint: "Write a new post", icon: FaPenFancy },
   { tab: "DataRequest", label: "Leads", hint: "Popup, contact, book a call", icon: FaFileSignature },
   { tab: "ListingRequests", label: "Listing Requests", hint: "Companies asking to be listed", icon: FaListAlt },
+  { tab: "ClaimRequests", label: "Claim Requests", hint: "Owners claiming their profile", icon: FaUserCheck },
   { tab: "Users", label: "Users", hint: "Dashboard accounts", icon: FaUsers },
   { tab: "AddUser", label: "Add User", hint: "Create an account", icon: FaUserPlus },
 ];
@@ -203,7 +206,7 @@ export default function Overview({ setActiveTab, canSee }) {
       )}
 
       {/* Headline numbers */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className={`grid grid-cols-2 md:grid-cols-3 ${data?.claims ? "xl:grid-cols-7" : "xl:grid-cols-6"} gap-4`}>
         {!data ? (
           Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} h="h-32" />)
         ) : (
@@ -231,6 +234,15 @@ export default function Overview({ setActiveTab, canSee }) {
                 value={fmt(leads.listingRequests.pending)}
                 sub={`pending · ${fmt(leads.listingRequests.last30)} new in 30 days`}
                 onClick={() => go("ListingRequests")}
+              />
+            )}
+            {data.claims && (
+              <StatTile
+                icon={UserCheck}
+                label="Claim requests"
+                value={fmt(data.claims.new)}
+                sub={`new · ${fmt(data.claims.total)} all time`}
+                onClick={() => go("ClaimRequests")}
               />
             )}
             <StatTile

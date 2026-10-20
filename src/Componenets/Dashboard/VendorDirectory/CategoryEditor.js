@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { toast } from "react-toastify";
 import { Editor } from "@tinymce/tinymce-react";
 import { updateCategory, updateCategoryRankings } from "@/services/api";
-import { ArrowLeft, Save, Plus, Trash2, GripVertical, ExternalLink } from "lucide-react";
+import { ArrowLeft, Save, Plus, Trash2, ExternalLink } from "lucide-react";
 
 function MetaBar({ value, ideal, max }) {
   const len  = (value || "").length;

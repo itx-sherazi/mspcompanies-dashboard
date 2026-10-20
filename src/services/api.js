@@ -1,4 +1,3 @@
-import axios from "axios";
 
 const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/v1`;
 
@@ -373,18 +372,6 @@ export const fetchVendors = async ({ search = "", group = "", page = 1, limit = 
   }
 };
 
-export const fetchVendorBySlug = async (slug) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/vendors/${encodeURIComponent(slug)}`, {
-      headers: authHeaders(), credentials: "include",
-    });
-    const data = await response.json();
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, error: error.message } };
-  }
-};
-
 export const createVendor = async (body) => {
   try {
     const response = await fetch(`${API_BASE_URL}/vendors`, {
@@ -690,29 +677,70 @@ export const deleteAllCyberSecurity = async () => {
 
 // ── Managed IT Services ─────────────────────────────────
 
-export const uploadManagedItSheet = async (file, mode = "append") => {
+// ── Master sheet (fills the directory and every city / state / country page) ──
+
+/** Downloads an Excel report of the import (which company goes on which page). Nothing is saved. */
+export const downloadMasterReport = async (file, { metro = false, replaceDirectory = true, createPages = true } = {}) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("mode", "report");
+    formData.append("metro", metro ? "1" : "0");
+    formData.append("replaceDirectory", replaceDirectory ? "1" : "0");
+    formData.append("createPages", createPages ? "1" : "0");
+    const response = await fetch(`${API_BASE_URL}/admin/master/upload`, {
+      method: "POST",
+      headers: authHeaders(),
+      credentials: "include",
+      body: formData,
+    });
+    if (!response.ok) {
+      let message = "Report failed";
+      try { message = (await response.json()).message || message; } catch (_) {}
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "master-import-report.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { status: 200, data: { ok: true } };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
+  }
+};
+
+export const uploadMasterSheet = async (file, { mode = "preview", metro = false, replaceDirectory = true, createPages = true } = {}) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", mode);
-    const response = await fetch(`${API_BASE_URL}/admin/managed-it-services/upload`, {
+    formData.append("metro", metro ? "1" : "0");
+    formData.append("replaceDirectory", replaceDirectory ? "1" : "0");
+    formData.append("createPages", createPages ? "1" : "0");
+    const response = await fetch(`${API_BASE_URL}/admin/master/upload`, {
       method: "POST",
       headers: authHeaders(),
       credentials: "include",
       body: formData,
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Upload failed");
+    if (!response.ok) throw new Error(data.message || "Master upload failed");
     return { status: response.status, data };
   } catch (error) {
     return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
   }
 };
 
-export const fetchManagedItAdmin = async ({ q = "", page = 1, limit = 50 } = {}) => {
+export const fetchManagedItAdmin = async ({ q = "", page = 1, limit = 50, eligible = "" } = {}) => {
   try {
     const params = new URLSearchParams();
     if (String(q).trim()) params.set("q", String(q).trim());
+    if (eligible === "yes" || eligible === "no") params.set("eligible", eligible);
     params.set("page", String(page));
     params.set("limit", String(limit));
     const response = await fetch(`${API_BASE_URL}/admin/managed-it-services?${params}`, {

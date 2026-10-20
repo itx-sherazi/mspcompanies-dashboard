@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { Users, Mail, Phone, MessageSquare, DollarSign, Hash, Trash2, Eye, X } from "lucide-react";
+import { Users, Mail, Phone, MessageSquare, Hash, Trash2, Eye, X } from "lucide-react";
 import { deleteRequestById, fetchRequest } from "@/services/api";
 
 export default function DatasetRequests() {
@@ -91,13 +91,6 @@ export default function DatasetRequests() {
       message: item?.message || item?.notes || "No message",
       createdAt: item?.createdAt || item?.date || item?.timestamp || item?._id || null
     }));
-
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price || 0);
-  };
 
   const formatPhone = (phone) => {
     if (!phone) return "N/A";

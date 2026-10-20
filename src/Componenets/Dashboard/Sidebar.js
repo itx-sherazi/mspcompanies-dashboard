@@ -9,6 +9,7 @@ import {
   FaGlobeAmericas,
   FaGlobe,
   FaListAlt,
+  FaUserCheck,
   FaBuilding,
   FaShieldAlt,
   FaLayerGroup,
@@ -146,6 +147,16 @@ export default function Sidebar({
           />
         )}
 
+        {show("MasterSheet") && (
+          <SidebarButton
+            icon={<FaLayerGroup size={20} />}
+            label="Master Sheet"
+            isActive={activeTab === "MasterSheet"}
+            onClick={() => setActiveTab("MasterSheet")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
         {show("ManagedIT") && (
           <SidebarButton
             icon={<FaBuilding size={20} />}
@@ -192,6 +203,16 @@ export default function Sidebar({
             label="Listing Requests"
             isActive={activeTab === "ListingRequests"}
             onClick={() => setActiveTab("ListingRequests")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("ClaimRequests") && (
+          <SidebarButton
+            icon={<FaUserCheck size={20} />}
+            label="Claim Requests"
+            isActive={activeTab === "ClaimRequests"}
+            onClick={() => setActiveTab("ClaimRequests")}
             sidebarOpen={sidebarOpen}
           />
         )}

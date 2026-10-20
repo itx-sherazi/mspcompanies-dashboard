@@ -9,25 +9,10 @@ import {
   updateCityAdmin,
   deleteCityAdmin,
   deleteCityHubCompany,
-  uploadCityCompaniesSheet,
 } from "@/services/api";
 import AllHubCompaniesTab from "./AllHubCompaniesTab";
 import CityContentEditor from "./CityContentEditor";
-import {
-  MapPin,
-  Plus,
-  Upload,
-  Trash2,
-  Eye,
-  EyeOff,
-  ExternalLink,
-  FileSpreadsheet,
-  Info,
-  Pencil,
-  Users,
-  LayoutGrid,
-  List,
-} from "lucide-react";
+import { MapPin, Plus, Trash2, Eye, EyeOff, ExternalLink, FileSpreadsheet, Pencil, Users, LayoutGrid, List } from "lucide-react";
 
 const FRONTEND_BASE =
   process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
@@ -46,9 +31,6 @@ export default function CityHubManagement() {
     faqs: [],
   });
   const [editingContentCity, setEditingContentCity] = useState(null);
-  const [uploadTarget, setUploadTarget] = useState(null);
-  const [uploadFile, setUploadFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -138,7 +120,7 @@ export default function CityHubManagement() {
   const handleDelete = async (city) => {
     if (
       !confirm(
-        `Delete city "${city.name}"? All uploaded companies on this city page will be removed with it.`,
+        `Delete city "${city.name}"? All companies on this city page will be removed with it.`,
       )
     )
       return;
@@ -264,22 +246,6 @@ export default function CityHubManagement() {
     }
   };
 
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!uploadTarget || !uploadFile) return;
-    setUploading(true);
-    const res = await uploadCityCompaniesSheet(uploadFile, uploadTarget.slug);
-    setUploading(false);
-    if (res.data?.ok) {
-      toast.success(res.data.message || "Upload complete");
-      setUploadTarget(null);
-      setUploadFile(null);
-      refreshCities();
-    } else {
-      toast.error(res.data?.message || "Upload failed");
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">
       <div className="rounded-2xl bg-linear-to-br from-[#0356A6] to-[#0A2E65] p-6 sm:p-8 text-white shadow-lg">
@@ -300,9 +266,7 @@ export default function CityHubManagement() {
               <code className="bg-black/20 px-2 py-0.5 rounded text-xs sm:text-sm">
                 /msp/city/company
               </code>
-              . Uploaded companies stay <strong>only</strong> on these pages
-              they are <strong>not</strong> added to the main MSP service
-              directory.
+              . Companies on these pages come from the <strong>Master Sheet</strong> import, and are in the main directory too.
             </p>
           </div>
         </div>
@@ -319,7 +283,7 @@ export default function CityHubManagement() {
           }`}
         >
           <LayoutGrid className="w-4 h-4 shrink-0" />
-          Cities & uploads
+          Cities
         </button>
         <button
           type="button"
@@ -521,34 +485,15 @@ export default function CityHubManagement() {
           </form>
         </div>
 
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/80 p-6 shadow-sm">
-          <h3 className="font-semibold text-amber-900 flex items-center gap-2">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50/80 p-6 shadow-sm">
+          <h3 className="font-semibold text-blue-900 flex items-center gap-2">
             <FileSpreadsheet className="w-5 h-5" />
-            Excel upload (city only)
+            Companies come from the Master Sheet
           </h3>
-          <ul className="mt-3 text-sm text-amber-950/90 space-y-2 list-disc pl-5">
-            <li>
-              Sheet name: <strong>Companies</strong> (same headers as service
-              upload).
-            </li>
-            <li>
-              <strong>Company Name</strong> required; up to <strong>50</strong>{" "}
-              rows; typical <strong>10–20</strong>.
-            </li>
-            <li>
-              Row order = order on the city page. Data is stored only on this
-              city <strong>not</strong> in the main MSP directory.
-            </li>
-          </ul>
-          <div className="mt-4 flex items-start gap-2 text-xs text-amber-900/80">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>
-              Full column list:{" "}
-              <code className="bg-white/60 px-1 rounded">
-                docs/CITY-MSP-PAGES-PHASED-PLAN.md
-              </code>
-            </span>
-          </div>
+          <p className="mt-3 text-sm text-blue-950/90">
+            Company lists are no longer uploaded page by page. Open <strong>Dashboard &gt; Master Sheet</strong>, choose the master file,
+            run a preview and apply it. Every page gets its companies by its city, state or country.
+          </p>
         </div>
       </div>
 
@@ -556,7 +501,7 @@ export default function CityHubManagement() {
         <div className="border-b border-slate-100 px-6 py-4 bg-slate-50/80">
           <h2 className="text-lg font-semibold text-slate-900">Cities</h2>
           <p className="text-sm text-slate-500 mt-0.5">
-            Upload a sheet per city. Companies appear only under that city URL.
+            Companies on these pages come from the Master Sheet (Dashboard &gt; Master Sheet).
           </p>
         </div>
         {loading ? (
@@ -625,14 +570,6 @@ export default function CityHubManagement() {
                   >
                     <Users className="w-4 h-4" />
                     Companies
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUploadTarget(city)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#0356A6] px-3 py-2 text-sm font-medium text-white hover:bg-[#024486]"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload sheet
                   </button>
                   <button
                     type="button"
@@ -874,8 +811,7 @@ export default function CityHubManagement() {
               Companies {companiesTarget.name}
             </h3>
             <p className="text-sm text-slate-500 mt-1 shrink-0">
-              Remove a row to drop it from this city page only. Upload a new
-              sheet to replace the full list.
+              Remove a row to drop it from this page only. The next Master Sheet import fills the list again.
             </p>
             <ul className="mt-4 space-y-2 overflow-y-auto flex-1 min-h-0">
               {companiesLoading ? (
@@ -884,7 +820,7 @@ export default function CityHubManagement() {
                 </li>
               ) : (companiesTarget.hubCompanies || []).length === 0 ? (
                 <li className="text-sm text-slate-500 py-6 text-center">
-                  No companies yet. Use Upload sheet.
+                  No companies yet. Use Dashboard &gt; Master Sheet.
                 </li>
               ) : (
                 (companiesTarget.hubCompanies || []).map((c) => (
@@ -928,47 +864,6 @@ export default function CityHubManagement() {
         </div>
       )}
 
-      {uploadTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200">
-            <h3 className="text-xl font-bold text-slate-900">
-              Upload companies {uploadTarget.name}
-            </h3>
-            <p className="text-sm text-slate-500 mt-1">
-              Sheet <strong>Companies</strong>, max 50 rows. Replaces the current
-              list for this city only.
-            </p>
-            <form onSubmit={handleUpload} className="mt-4 space-y-4">
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                required
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="w-full text-sm"
-              />
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg border border-slate-200 text-sm"
-                  onClick={() => {
-                    setUploadTarget(null);
-                    setUploadFile(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploading}
-                  className="px-4 py-2 rounded-lg bg-[#0356A6] text-white text-sm font-semibold disabled:opacity-50"
-                >
-                  {uploading ? "Uploading…" : "Upload"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

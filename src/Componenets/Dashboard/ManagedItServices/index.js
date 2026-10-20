@@ -3,34 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import {
-  uploadManagedItSheet,
   fetchManagedItAdmin,
   deleteManagedItCompany,
   deleteAllManagedIt,
   wipeListingCompanies,
 } from "@/services/api";
-import {
-  Upload,
-  Search,
-  Trash2,
-  AlertTriangle,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  FileSpreadsheet,
-  RefreshCw,
-  Globe,
-  MapPin,
-} from "lucide-react";
-
-const REQUIRED_COLUMNS = [
-  "Company Name", "# Employees", "Industry", "Website",
-  "Company Services", "Company Partners", "Company Linkedin Url",
-  "Facebook Url", "Twitter Url", "Company Street", "Company City",
-  "Company State", "Company Country", "Company Postal Code",
-  "Company Address", "Keywords", "Company Phone", "Technologies",
-  "SIC Codes", "NAICS Codes", "Short Description", "Founded Year", "Logo Url",
-];
+import { Search, Trash2, AlertTriangle, Building2, ChevronLeft, ChevronRight, Globe, MapPin } from "lucide-react";
 
 export default function ManagedItServicesManagement() {
   const [companies, setCompanies]   = useState([]);
@@ -39,22 +17,22 @@ export default function ManagedItServicesManagement() {
   const [page, setPage]             = useState(1);
   const [search, setSearch]         = useState("");
   const [loading, setLoading]       = useState(true);
-  const [uploading, setUploading]   = useState(false);
-  const [uploadMode, setUploadMode] = useState("append");
-  const [uploadFile, setUploadFile] = useState(null);
-  const [tab, setTab]               = useState("list"); // "list" | "upload"
+  const tab = "list"; // the old Upload Sheet tab is gone; the Master Sheet tab fills this list
   const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const [wipeOpen, setWipeOpen] = useState(false);
   const [wipeText, setWipeText] = useState("");
   const [wiping, setWiping] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
-  const [replaceConfirm, setReplaceConfirm] = useState(false);
-  const fileRef = useRef(null);
+  const eligibleRef = useRef("all"); // Index Eligible filter, read by load()
+  const [eligible, setEligible] = useState("all");
+  const [eligibleTotal, setEligibleTotal] = useState(0);
+  const [directoryTotal, setDirectoryTotal] = useState(0);
 
   const load = useCallback(async (p = 1, q = "") => {
     setLoading(true);
-    const res = await fetchManagedItAdmin({ q, page: p, limit: 50 });
+    const res = await fetchManagedItAdmin({ q, page: p, limit: 50, eligible: eligibleRef.current === "all" ? "" : eligibleRef.current });
     if (res.data?.ok) {
+      setEligibleTotal(res.data.eligibleTotal || 0);
+      setDirectoryTotal(res.data.directoryTotal || 0);
       setCompanies(res.data.data || []);
       setTotal(res.data.total || 0);
       setTotalPages(res.data.totalPages || 1);
@@ -70,28 +48,6 @@ export default function ManagedItServicesManagement() {
   const handleSearch = (e) => {
     e.preventDefault();
     load(1, search);
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!uploadFile) { toast.error("Select an Excel file first"); return; }
-    if (uploadMode === "replace" && !replaceConfirm) {
-      toast.error("Replace mode: confirm the checkbox first. This deletes all existing companies.");
-      return;
-    }
-    setUploading(true);
-    const res = await uploadManagedItSheet(uploadFile, uploadMode);
-    setUploading(false);
-    if (res.data?.ok) {
-      setUploadResult(res.data);
-      toast.success(res.data.message || "Upload complete");
-      setUploadFile(null);
-      if (fileRef.current) fileRef.current.value = "";
-      load(1, "");
-    } else {
-      setUploadResult(null);
-      toast.error(res.data?.message || "Upload failed");
-    }
   };
 
   const handleDelete = async (slug, name) => {
@@ -144,22 +100,8 @@ export default function ManagedItServicesManagement() {
             Managed IT Services Directory
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total.toLocaleString()} companies · feeds /managed-it-services only (city & country hubs use their own sheets)
+            {directoryTotal.toLocaleString()} companies in the directory. Use the Master Sheet tab to fill the directory and every city, state and country page.
           </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTab("list")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${tab === "list" ? "bg-[#1d4882] text-white" : "bg-white border text-gray-700 hover:bg-gray-50"}`}
-          >
-            Company List
-          </button>
-          <button
-            onClick={() => setTab("upload")}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-1.5 ${tab === "upload" ? "bg-[#1d4882] text-white" : "bg-white border text-gray-700 hover:bg-gray-50"}`}
-          >
-            <Upload size={14} /> Upload Sheet
-          </button>
         </div>
       </div>
 
@@ -225,112 +167,28 @@ export default function ManagedItServicesManagement() {
         </div>
       )}
 
-      {/* Upload Tab */}
-      {tab === "upload" && (
-        <div className="bg-white rounded-xl border p-6 shadow-sm max-w-xl">
-          <h2 className="font-bold text-gray-800 mb-1 flex items-center gap-2">
-            <FileSpreadsheet size={18} className="text-[#1d4882]" />
-            Upload Excel Sheet
-          </h2>
-          <p className="text-xs text-gray-500 mb-4">
-            This sheet feeds <code className="bg-gray-100 px-1 rounded">/managed-it-services</code> only.
-            City and country hub pages use their own Excel uploads. Columns (any order):
-          </p>
-          <div className="flex flex-wrap gap-1 mb-5">
-            {REQUIRED_COLUMNS.map((c) => (
-              <span key={c} className="text-[10px] bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded font-mono">
-                {c}
-              </span>
-            ))}
-          </div>
-          <form onSubmit={handleUpload} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Upload Mode</label>
-              <div className="flex gap-4">
-                {[["append", "Append (skip duplicates)", "Add new names only. Same company name already in DB is skipped."], ["replace", "Replace All", "Delete everything, then insert unique names from this sheet"]].map(([val, label, desc]) => (
-                  <label key={val} className={`flex-1 cursor-pointer rounded-lg border p-3 text-sm transition ${uploadMode === val ? "border-[#1d4882] bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}>
-                    <input type="radio" value={val} checked={uploadMode === val} onChange={() => { setUploadMode(val); setReplaceConfirm(false); }} className="mr-2" />
-                    <span className="font-semibold">{label}</span>
-                    <p className="text-xs text-gray-500 mt-0.5 ml-5">{desc}</p>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Excel File (.xlsx / .xls)</label>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="block w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#1d4882] file:text-white hover:file:bg-[#163a6e] cursor-pointer"
-              />
-              {uploadFile && (
-                <p className="text-xs text-green-600 mt-1 font-medium">✓ {uploadFile.name}</p>
-              )}
-            </div>
-            {uploadMode === "append" && (
-              <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
-                Purani companies <strong>remove nahi hongi</strong>. Sheet ki nayi names add hongi;
-                jo naam already database mein hai wo skip ho jayegi.
-              </div>
-            )}
-            {uploadMode === "replace" && (
-              <div className="space-y-2">
-                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800">
-                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                  <span>Replace mode will <strong>delete all existing companies</strong> before inserting. This cannot be undone. Daily new sheets ke liye Append use karo.</span>
-                </div>
-                <label className="flex items-start gap-2 text-xs text-amber-900">
-                  <input
-                    type="checkbox"
-                    checked={replaceConfirm}
-                    onChange={(e) => setReplaceConfirm(e.target.checked)}
-                    className="mt-0.5"
-                  />
-                  I understand this deletes the current MIT list.
-                </label>
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={uploading || !uploadFile || (uploadMode === "replace" && !replaceConfirm)}
-              className="w-full py-2.5 bg-[#1d4882] text-white rounded-lg font-semibold text-sm hover:bg-[#163a6e] transition disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {uploading ? <><RefreshCw size={14} className="animate-spin" /> Uploading…</> : <><Upload size={14} /> Upload Companies</>}
-            </button>
-          </form>
-          {uploadResult?.stats && (
-            <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
-              <p className="font-semibold text-emerald-900 mb-2">Upload result</p>
-              <ul className="space-y-1">
-                <li>Mode: <strong>{uploadResult.stats.mode === "replace" ? "Replace (old list deleted)" : "Append (old list kept)"}</strong></li>
-                {uploadResult.stats.mode !== "replace" && (
-                  <li>Pehle se database mein (rehin): <strong>{uploadResult.stats.keptExisting ?? 0}</strong></li>
-                )}
-                <li>Sheet mein companies: <strong>{uploadResult.stats.sheetRows}</strong></li>
-                <li>Nayi upload: <strong>{uploadResult.stats.uploaded}</strong></li>
-                <li>Ab total database: <strong>{uploadResult.stats.totalAfter ?? uploadResult.stats.uploaded}</strong></li>
-                <li>Duplicate skip: <strong>{uploadResult.stats.skippedDuplicates}</strong>
-                  {uploadResult.stats.skippedDuplicates > 0 && (
-                    <span className="text-emerald-800/80">
-                      {" "}({uploadResult.stats.skippedExisting} already in database, {uploadResult.stats.skippedSheetDuplicates} repeat name in sheet)
-                    </span>
-                  )}
-                </li>
-                {uploadResult.stats.skippedEmpty > 0 && (
-                  <li>Empty / invalid rows: <strong>{uploadResult.stats.skippedEmpty}</strong></li>
-                )}
-              </ul>
-              <p className="mt-2 text-xs text-emerald-800">{uploadResult.message}</p>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* List Tab */}
       {tab === "list" && (
         <>
+          {/* Index Eligible counter */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Index eligible (Y)</p>
+              <p className="mt-1 text-2xl font-bold text-emerald-900">{eligibleTotal.toLocaleString()}</p>
+              <p className="text-xs text-emerald-800/80">Google may index these profiles</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Not eligible (N)</p>
+              <p className="mt-1 text-2xl font-bold text-gray-800">{Math.max(0, directoryTotal - eligibleTotal).toLocaleString()}</p>
+              <p className="text-xs text-gray-500">These profiles stay noindex</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Share indexable</p>
+              <p className="mt-1 text-2xl font-bold text-gray-800">{directoryTotal ? Math.round((eligibleTotal / directoryTotal) * 100) : 0}%</p>
+              <p className="text-xs text-gray-500">of {directoryTotal.toLocaleString()} companies</p>
+            </div>
+          </div>
+
           {/* Search + Delete All */}
           <div className="flex flex-wrap gap-3 items-center">
             <form onSubmit={handleSearch} className="flex gap-2 flex-1 min-w-[220px]">
@@ -353,6 +211,16 @@ export default function ManagedItServicesManagement() {
                 </button>
               )}
             </form>
+            <select
+              value={eligible}
+              onChange={(e) => { eligibleRef.current = e.target.value; setEligible(e.target.value); load(1, search); }}
+              className="px-3 py-2 border rounded-lg text-sm text-gray-700 bg-white"
+              aria-label="Filter by Index Eligible"
+            >
+              <option value="all">All companies</option>
+              <option value="yes">Index eligible only</option>
+              <option value="no">Not eligible only</option>
+            </select>
             <button
               onClick={() => setConfirmDeleteAll(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm font-semibold hover:bg-red-100 transition"
@@ -386,7 +254,7 @@ export default function ManagedItServicesManagement() {
           ) : companies.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-xl border">
               <Building2 size={36} className="mx-auto text-gray-300 mb-3" />
-              <p className="text-gray-500 text-sm">No companies found. Upload an Excel sheet to get started.</p>
+              <p className="text-gray-500 text-sm">No companies found. Use Dashboard, Master Sheet to fill the directory.</p>
             </div>
           ) : (
             <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
@@ -399,6 +267,7 @@ export default function ManagedItServicesManagement() {
                       <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Location</th>
                       <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Industry</th>
                       <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Employees</th>
+                      <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Index</th>
                       <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Website</th>
                       <th className="px-4 py-3 font-semibold text-gray-600 text-xs uppercase">Actions</th>
                     </tr>
@@ -421,6 +290,13 @@ export default function ManagedItServicesManagement() {
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-600 max-w-[140px] truncate">{c.industry || ""}</td>
                         <td className="px-4 py-3 text-xs text-gray-600">{c.employees || ""}</td>
+                        <td className="px-4 py-3">
+                          {c.indexEligible ? (
+                            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Y</span>
+                          ) : (
+                            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-semibold text-gray-500">N</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           {c.website ? (
                             <a href={c.website} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-[#1d4882] hover:underline">

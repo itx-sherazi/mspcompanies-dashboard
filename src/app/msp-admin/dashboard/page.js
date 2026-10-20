@@ -17,6 +17,8 @@ import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
 import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
 import CompanyQuality from "@/Componenets/Dashboard/CompanyQuality";
 import Overview from "@/Componenets/Dashboard/Overview";
+import MasterSheet from "@/Componenets/Dashboard/MasterSheet";
+import ClaimRequests from "@/Componenets/Dashboard/ClaimRequests";
 
 // Tabs visible to the "seo" role  must match Sidebar.js's SEO_ALLOWED_TABS.
 const SEO_ALLOWED_TABS = new Set([
@@ -101,8 +103,12 @@ export default function Dashboard() {
         return <MsspCountryHubManagement />;
       case "ListingRequests":
         return <ListingRequests />;
+      case "ClaimRequests":
+        return <ClaimRequests />;
       case "ManagedIT":
         return <ManagedItServicesManagement />;
+      case "MasterSheet":
+        return <MasterSheet />;
       case "CyberSecurity":
         return <CyberSecurityManagement />;
       case "VendorDirectory":

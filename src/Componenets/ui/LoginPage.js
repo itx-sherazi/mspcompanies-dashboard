@@ -1,8 +1,6 @@
 "use client";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { loginUser } from "@/services/api";
 
 const LoginPage = () => {
@@ -15,7 +13,6 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const router = useRouter();
 
   const handleLoginChange = (e) => {
     const { name, value } = e.target;

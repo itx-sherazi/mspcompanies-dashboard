@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Eye, EyeOff, Mail, Lock, User, CheckCircle, XCircle, UserPlus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Mail, Lock, User, XCircle, UserPlus } from "lucide-react";
 import { signinUser } from "@/services/api";
 import { handleApiError, showSuccess } from "@/utils/errorHandler";
 
@@ -16,7 +15,6 @@ const UserAddPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const router = useRouter();
 
   const handleSignUpChange = (e) => {
     const { name, value } = e.target;
