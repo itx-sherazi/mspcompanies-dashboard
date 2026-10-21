@@ -58,6 +58,10 @@ export default function PlaceSheet({ kind, reportName, fileHint, intro, rule, la
       toast.error(res.data?.message || "Upload failed");
       return;
     }
+    if (res.data.ignored) {
+      toast.info(res.data.message);
+      return;
+    }
     if (mode === "preview") {
       setPreview(res.data);
       setApplied(null);
@@ -125,8 +129,7 @@ export default function PlaceSheet({ kind, reportName, fileHint, intro, rule, la
               <div>
                 <p className="font-semibold">Applied in {(applied.tookMs / 1000).toFixed(1)} s</p>
                 <p>
-                  {applied.pages.total} pages saved. Directory: {applied.directory.after} companies
-                  {applied.directory.removed ? `, ${applied.directory.removed} old ones removed` : ""}.
+                  {applied.pages.total} pages saved. Directory: {applied.directory.added} added, {applied.directory.updated} updated, {applied.directory.kept} left as they were.
                 </p>
               </div>
             </div>
@@ -134,7 +137,7 @@ export default function PlaceSheet({ kind, reportName, fileHint, intro, rule, la
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Stat label="Sheet rows" value={result.sheet.sheetRows} sub={`${result.sheet.kept} kept, ${result.sheet.skippedDuplicates} duplicates skipped`} />
-            <Stat label="Directory" value={`${result.directory.before} to ${result.directory.after}`} sub="companies, replaces the old list" />
+            <Stat label="Directory" value={`${result.directory.before} to ${result.directory.after}`} sub={`${result.directory.added} added, ${result.directory.updated} updated, ${result.directory.kept} unchanged`} />
             <Stat label="Index eligible (Y)" value={(result.sheet.indexEligible ?? 0).toLocaleString()} sub={`${(result.sheet.withFaq ?? 0).toLocaleString()} companies have FAQs`} />
             <Stat label="Pages" value={result.pages.total} sub={`${result.pages.country} country, ${result.pages.state} state, ${result.pages.city} city`} />
           </div>
@@ -202,7 +205,7 @@ export default function PlaceSheet({ kind, reportName, fileHint, intro, rule, la
             <div className="rounded-xl border border-red-200 bg-red-50 p-5">
               <p className="text-sm font-semibold text-red-900">3. Apply to the live data</p>
               <p className="mt-1 text-sm text-red-800">
-                This replaces the {label} directory with {result.directory.after} companies and saves {result.pages.total} pages. No backup copy is kept, so this cannot be undone.
+                This adds {result.directory.added} and updates {result.directory.updated} companies in the {label} directory (it will hold {result.directory.after}) and saves {result.pages.total} pages. Nothing is deleted. No backup copy is kept, so this cannot be undone.
                 Type <b>APPLY</b> to continue.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">

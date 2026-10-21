@@ -627,13 +627,12 @@ export const deleteCyberSecurityCompany = async (slug) => {
 // ── Master sheet (fills the directory and every city / state / country page) ──
 
 /** Downloads an Excel report of the import (which company goes on which page). Nothing is saved. */
-export const downloadMasterReport = async (file, { metro = false, replaceDirectory = true, createPages = true } = {}) => {
+export const downloadMasterReport = async (file, { metro = false, createPages = true } = {}) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", "report");
     formData.append("metro", metro ? "1" : "0");
-    formData.append("replaceDirectory", replaceDirectory ? "1" : "0");
     formData.append("createPages", createPages ? "1" : "0");
     const response = await fetch(`${API_BASE_URL}/admin/master/upload`, {
       method: "POST",
@@ -661,13 +660,12 @@ export const downloadMasterReport = async (file, { metro = false, replaceDirecto
   }
 };
 
-export const uploadMasterSheet = async (file, { mode = "preview", metro = false, replaceDirectory = true, createPages = true } = {}) => {
+export const uploadMasterSheet = async (file, { mode = "preview", metro = false, createPages = true } = {}) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("mode", mode);
     formData.append("metro", metro ? "1" : "0");
-    formData.append("replaceDirectory", replaceDirectory ? "1" : "0");
     formData.append("createPages", createPages ? "1" : "0");
     const response = await fetch(`${API_BASE_URL}/admin/master/upload`, {
       method: "POST",

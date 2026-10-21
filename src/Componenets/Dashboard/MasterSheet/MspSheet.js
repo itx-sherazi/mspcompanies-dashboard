@@ -21,7 +21,6 @@ export default function MspSheet() {
   const fileRef = useRef(null);
   const [file, setFile] = useState(null);
   const [metro, setMetro] = useState(false);
-  const [replaceDirectory, setReplaceDirectory] = useState(true);
   const [createPages, setCreatePages] = useState(true);
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -52,10 +51,14 @@ export default function MspSheet() {
       return;
     }
     setBusy(true);
-    const res = await uploadMasterSheet(file, { mode, metro, replaceDirectory, createPages });
+    const res = await uploadMasterSheet(file, { mode, metro, createPages });
     setBusy(false);
     if (!res.data?.ok) {
       toast.error(res.data?.message || "Master upload failed");
+      return;
+    }
+    if (res.data.ignored) {
+      toast.info(res.data.message);
       return;
     }
     if (mode === "preview") {
@@ -72,7 +75,7 @@ export default function MspSheet() {
   const downloadReport = async () => {
     if (!file) return;
     setReporting(true);
-    const res = await downloadMasterReport(file, { metro, replaceDirectory, createPages });
+    const res = await downloadMasterReport(file, { metro, createPages });
     setReporting(false);
     if (res.data?.ok) toast.success("Report downloaded");
     else toast.error(res.data?.message || "Report failed");
@@ -102,12 +105,9 @@ export default function MspSheet() {
         </div>
 
         <div className="mt-4 space-y-2 text-sm text-gray-700">
-          <label className="flex items-start gap-2">
-            <input type="checkbox" checked={replaceDirectory} onChange={(e) => { setReplaceDirectory(e.target.checked); setPreview(null); }} className="mt-1" />
-            <span>
-              <b>Replace the main directory</b> (Managed IT Services list). Companies that are not in this sheet are removed from the directory.
-            </span>
-          </label>
+          <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
+            An upload <b>adds</b> new companies and <b>updates</b> the ones that are already in the Managed IT directory. Nothing is deleted, and a blank cell in the sheet never wipes a value that is stored. At most 5,000 companies per upload.
+          </p>
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={createPages} onChange={(e) => { setCreatePages(e.target.checked); setPreview(null); }} className="mt-1" />
             <span>
@@ -151,8 +151,7 @@ export default function MspSheet() {
               <div>
                 <p className="font-semibold">Applied in {(applied.tookMs / 1000).toFixed(1)} s</p>
                 <p>
-                  {applied.pages.updated + (applied.pages.created || 0)} pages filled with {applied.pages.companiesPlaced} companies ({applied.pages.createdNow ?? applied.pages.created ?? 0} created). Directory: {applied.directory.after} companies
-                  {applied.directory.removed ? `, ${applied.directory.removed} old ones removed` : ""}.
+                  {applied.pages.updated + (applied.pages.created || 0)} pages filled with {applied.pages.companiesPlaced} companies ({applied.pages.createdNow ?? applied.pages.created ?? 0} created). Directory: {applied.directory.added} added, {applied.directory.updated} updated, {applied.directory.kept} left as they were.
                 </p>
               </div>
             </div>
@@ -160,7 +159,7 @@ export default function MspSheet() {
 
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <Stat label="Sheet rows" value={result.sheet.sheetRows} sub={`${result.sheet.kept} kept, ${result.sheet.skippedDuplicates} duplicates skipped`} />
-            <Stat label="Directory" value={`${result.directory.before} to ${result.directory.after}`} sub={`${result.directory.replace ? "replace" : "add and update"}${result.sheet.listedKept ? ` · ${result.sheet.listedKept} from Get Listed kept` : ""}`} />
+            <Stat label="Directory" value={`${result.directory.before} to ${result.directory.after}`} sub={`${result.directory.added} added, ${result.directory.updated} updated, ${result.directory.kept} unchanged`} />
             <Stat label="Index eligible (Y)" value={(result.sheet.indexEligible ?? 0).toLocaleString()} sub={`${(result.sheet.withFaq ?? 0).toLocaleString()} companies have FAQs`} />
             <Stat label="Pages filled" value={result.pages.updated + (result.pages.created || 0)} sub={`${result.pages.created || 0} new, ${result.pages.updated} existing`} />
             <Stat label="Companies placed on pages" value={result.pages.companiesPlaced} />
@@ -242,7 +241,7 @@ export default function MspSheet() {
             <div className="rounded-xl border border-red-200 bg-red-50 p-5">
               <p className="text-sm font-semibold text-red-900">3. Apply to the live data</p>
               <p className="mt-1 text-sm text-red-800">
-                This fills {result.pages.updated + (result.pages.created || 0)} pages ({result.pages.created || 0} of them new){result.directory.replace ? " and the main directory" : ""}. No backup copy is
+                This fills {result.pages.updated + (result.pages.created || 0)} pages ({result.pages.created || 0} of them new) and adds {result.directory.added} and updates {result.directory.updated} companies in the main directory. Nothing is deleted. No backup copy is
                 kept, so this cannot be undone. Type <b>APPLY</b> to continue.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
