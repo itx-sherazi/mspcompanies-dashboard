@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import MspSheet from "./MspSheet";
-import MsspSheet from "./MsspSheet";
+import PlaceSheet from "./PlaceSheet";
 
 const TABS = [
   { key: "msp", label: "MSP sheet" },
   { key: "mssp", label: "MSSP sheet" },
+  { key: "cyber", label: "Cybersecurity sheet" },
 ];
 
 export default function MasterSheet() {
@@ -30,7 +31,26 @@ export default function MasterSheet() {
       </div>
       {/* Both stay mounted so a half-finished preview is not lost when switching tabs. */}
       <div className={tab === "msp" ? "" : "hidden"}><MspSheet /></div>
-      <div className={tab === "mssp" ? "" : "hidden"}><MsspSheet /></div>
+      <div className={tab === "mssp" ? "" : "hidden"}>
+        <PlaceSheet
+          kind="mssp"
+          reportName="mssp-import-report.xlsx"
+          fileHint="Select the MSSP master .xlsx"
+          intro={<>One Excel file fills the MSSP directory (<b>/managed-security-service-providers</b>) and its country, state and city pages under <b>/mssp</b>. Same columns as the MSP master sheet. Always run a preview first.</>}
+          rule="Which states and cities get a page is set in the code (backend/config/msspPages.js). Countries with too few companies get none; their companies stay in the directory."
+          label="MSSP"
+        />
+      </div>
+      <div className={tab === "cyber" ? "" : "hidden"}>
+        <PlaceSheet
+          kind="cyber"
+          reportName="cybersecurity-import-report.xlsx"
+          fileHint="Select the cybersecurity master .xlsx"
+          intro={<>One Excel file fills the cybersecurity directory (<b>/cybersecurity-companies</b>) and its country, state and city pages (<b>/cybersecurity-companies-in-...</b>). Same columns as the MSP master sheet. A company with a Live Slug keeps its profile link. Always run a preview first.</>}
+          rule="A country, state or city gets a page when it has at least 10 companies (backend/config/cyberPages.js). Smaller places stay in the directory."
+          label="cybersecurity"
+        />
+      </div>
     </div>
   );
 }

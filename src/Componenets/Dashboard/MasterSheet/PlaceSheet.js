@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { uploadMsspSheet, downloadMsspReport } from "@/services/api";
+import { uploadPlaceSheet, downloadPlaceReport } from "@/services/api";
 import { Upload, FileSpreadsheet, AlertTriangle, CheckCircle2, Search, RefreshCw, Download } from "lucide-react";
 
 const TYPE_LABEL = { city: "City", state: "State", country: "Country" };
@@ -17,7 +17,11 @@ function Stat({ label, value, sub }) {
   );
 }
 
-export default function MsspSheet() {
+/**
+ * Upload box of a master sheet that fills a directory and its location pages (MSSP, cybersecurity).
+ * kind: "mssp" | "cyber". label is the noun used in the messages.
+ */
+export default function PlaceSheet({ kind, reportName, fileHint, intro, rule, label }) {
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -44,14 +48,14 @@ export default function MsspSheet() {
 
   const run = async (mode) => {
     if (!file) {
-      toast.error("Choose the MSSP Excel file first");
+      toast.error("Choose the Excel file first");
       return;
     }
     setBusy(true);
-    const res = await uploadMsspSheet(file, { mode });
+    const res = await uploadPlaceSheet(kind, file, { mode });
     setBusy(false);
     if (!res.data?.ok) {
-      toast.error(res.data?.message || "MSSP upload failed");
+      toast.error(res.data?.message || "Upload failed");
       return;
     }
     if (mode === "preview") {
@@ -61,14 +65,14 @@ export default function MsspSheet() {
     } else {
       setApplied(res.data);
       setConfirmText("");
-      toast.success("MSSP sheet applied");
+      toast.success("Sheet applied");
     }
   };
 
   const downloadReport = async () => {
     if (!file) return;
     setReporting(true);
-    const res = await downloadMsspReport(file);
+    const res = await downloadPlaceReport(kind, file, reportName);
     setReporting(false);
     if (res.data?.ok) toast.success("Report downloaded");
     else toast.error(res.data?.message || "Report failed");
@@ -78,23 +82,20 @@ export default function MsspSheet() {
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-gray-600">
-        One Excel file fills the MSSP directory (<b>/managed-security-service-providers</b>) and every country, state and city page under <b>/mssp</b>.
-        Same columns as the MSP master sheet. Always run a preview first.
-      </p>
+      <p className="text-sm text-gray-600">{intro}</p>
 
       <div className="rounded-xl border border-gray-200 bg-white p-5">
         <p className="text-sm font-semibold text-gray-800">1. Choose the file</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
             <FileSpreadsheet className="h-4 w-4" />
-            {file ? file.name : "Select the MSSP master .xlsx"}
+            {file ? file.name : fileHint}
             <input ref={fileRef} type="file" accept=".xlsx,.xls" onChange={onPick} className="hidden" />
           </label>
           {file ? <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(1)} MB</span> : null}
         </div>
 
-        <p className="mt-4 text-xs text-gray-500">Every country gets a page. Only the states and cities chosen in the code (backend/config/msspPages.js) get their own page; the other companies stay on the country page and in the directory.</p>
+        <p className="mt-4 text-xs text-gray-500">{rule}</p>
 
         <div className="mt-4 flex flex-wrap gap-3">
           <button
@@ -186,7 +187,7 @@ export default function MsspSheet() {
                         {r.name}
                         {r.state ? <span className="ml-2 text-xs font-normal text-gray-500">{r.state}</span> : null}
                       </td>
-                      <td className="px-4 py-2 text-gray-500">/mssp/{r.slug}</td>
+                      <td className="px-4 py-2 text-gray-500">{r.url}</td>
                       <td className="px-4 py-2 text-gray-600">{TYPE_LABEL[r.type] || r.type}</td>
                       <td className="px-4 py-2 text-gray-600">{r.country}</td>
                       <td className="px-4 py-2 text-right font-semibold text-gray-900">{r.companies}</td>
@@ -201,7 +202,7 @@ export default function MsspSheet() {
             <div className="rounded-xl border border-red-200 bg-red-50 p-5">
               <p className="text-sm font-semibold text-red-900">3. Apply to the live data</p>
               <p className="mt-1 text-sm text-red-800">
-                This replaces the MSSP directory with {result.directory.after} companies and saves {result.pages.total} pages. No backup copy is kept, so this cannot be undone.
+                This replaces the {label} directory with {result.directory.after} companies and saves {result.pages.total} pages. No backup copy is kept, so this cannot be undone.
                 Type <b>APPLY</b> to continue.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -216,7 +217,7 @@ export default function MsspSheet() {
                   disabled={!canApply}
                   className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
                 >
-                  <Upload className="h-4 w-4" /> Apply MSSP sheet
+                  <Upload className="h-4 w-4" /> Apply {label} sheet
                 </button>
               </div>
             </div>

@@ -589,25 +589,6 @@ export const deleteParentCategory = async (id) => {
 
 // ── Cybersecurity Companies ─────────────────────────────
 
-export const uploadCyberSecuritySheet = async (file, mode = "append") => {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("mode", mode);
-    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/upload`, {
-      method: "POST",
-      headers: authHeaders(),
-      credentials: "include",
-      body: formData,
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Upload failed");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
-  }
-};
-
 export const fetchCyberSecurityAdmin = async ({ q = "", page = 1, limit = 50 } = {}) => {
   try {
     const params = new URLSearchParams();
@@ -635,21 +616,6 @@ export const deleteCyberSecurityCompany = async (slug) => {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Delete failed");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message } };
-  }
-};
-
-export const deleteAllCyberSecurity = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/all`, {
-      method: "DELETE",
-      headers: authHeaders(),
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Delete all failed");
     return { status: response.status, data };
   } catch (error) {
     return { status: 500, data: { ok: false, message: error.message } };
@@ -717,20 +683,23 @@ export const uploadMasterSheet = async (file, { mode = "preview", metro = false,
   }
 };
 
-// ── MSSP master sheet (fills the MSSP directory and every /mssp page) ──
+// ── Master sheets of the MSSP and the cybersecurity directory (they fill the directory and its location pages) ──
 
-const postMsspSheet = (file, mode) => {
+const PLACE_SHEET_URL = { mssp: "/admin/mssp/upload", cyber: "/admin/cybersecurity-companies/upload" };
+
+const postPlaceSheet = (kind, file, mode) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("mode", mode);
-  return fetch(`${API_BASE_URL}/admin/mssp/upload`, { method: "POST", headers: authHeaders(), credentials: "include", body: formData });
+  return fetch(`${API_BASE_URL}${PLACE_SHEET_URL[kind]}`, { method: "POST", headers: authHeaders(), credentials: "include", body: formData });
 };
 
-export const uploadMsspSheet = async (file, { mode = "preview" } = {}) => {
+/** kind is "mssp" or "cyber". mode is "preview" or "apply". */
+export const uploadPlaceSheet = async (kind, file, { mode = "preview" } = {}) => {
   try {
-    const response = await postMsspSheet(file, mode);
+    const response = await postPlaceSheet(kind, file, mode);
     const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "MSSP upload failed");
+    if (!response.ok) throw new Error(data.message || "Upload failed");
     return { status: response.status, data };
   } catch (error) {
     return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
@@ -738,9 +707,9 @@ export const uploadMsspSheet = async (file, { mode = "preview" } = {}) => {
 };
 
 /** Downloads an Excel report (every page and the page each company goes on). Nothing is saved. */
-export const downloadMsspReport = async (file) => {
+export const downloadPlaceReport = async (kind, file, filename) => {
   try {
-    const response = await postMsspSheet(file, "report");
+    const response = await postPlaceSheet(kind, file, "report");
     if (!response.ok) {
       let message = "Report failed";
       try { message = (await response.json()).message || message; } catch (_) {}
@@ -749,7 +718,7 @@ export const downloadMsspReport = async (file) => {
     const url = URL.createObjectURL(await response.blob());
     const a = document.createElement("a");
     a.href = url;
-    a.download = "mssp-import-report.xlsx";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
