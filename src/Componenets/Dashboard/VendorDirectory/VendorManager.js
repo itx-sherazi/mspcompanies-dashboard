@@ -5,7 +5,8 @@ import { toast } from "react-toastify";
 import { fetchVendors, deleteVendor } from "@/services/api";
 import VendorEditor from "./VendorEditor";
 import VendorImport from "./VendorImport";
-import { Plus, Search, Pencil, Trash2, RefreshCw, ExternalLink, ChevronDown, Upload, List } from "lucide-react";
+import UnlistedVendors from "./UnlistedVendors";
+import { Plus, Search, Pencil, Trash2, RefreshCw, ExternalLink, ChevronDown, Upload, List, EyeOff } from "lucide-react";
 
 const GROUPS = ["All Groups","MSP Software","Cybersecurity","Backup & DR","Communications","Monitoring","Compliance","Cloud","Network","AI","Microsoft","Infrastructure"];
 
@@ -82,6 +83,7 @@ export default function VendorManager() {
         <div className="flex gap-1">
           {[
             { id: "list",   label: "All Vendors", icon: <List size={14} /> },
+            { id: "unlisted", label: "Not on a page", icon: <EyeOff size={14} /> },
             { id: "import", label: "Import from Sheet", icon: <Upload size={14} /> },
           ].map((t) => (
             <button
@@ -96,6 +98,9 @@ export default function VendorManager() {
           ))}
         </div>
       </div>
+
+      {/* Vendors on no category page */}
+      {innerTab === "unlisted" && <UnlistedVendors onEdit={(v) => setEditing(v)} />}
 
       {/* Import tab */}
       {innerTab === "import" && <VendorImport />}
