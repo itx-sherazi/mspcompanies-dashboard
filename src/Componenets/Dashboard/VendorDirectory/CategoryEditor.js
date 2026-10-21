@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { toast } from "react-toastify";
 import { Editor } from "@tinymce/tinymce-react";
-import { updateCategory, updateCategoryRankings } from "@/services/api";
+import { updateCategory, updateCategoryRankings, fetchVendors } from "@/services/api";
 import { ArrowLeft, Save, Plus, Trash2, ExternalLink } from "lucide-react";
 
 function MetaBar({ value, ideal, max }) {
@@ -55,6 +55,8 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
   );
   const [rankings, setRankings] = useState(initialCategory.vendorRankings || []);
   const [newVendorSlug, setNewVendorSlug] = useState("");
+  // Vendors of this category as the public page lists them today, to show names and to fill the list in one click.
+  const [catVendors, setCatVendors] = useState([]);
   const [saving, setSaving]   = useState(false);
   const editorRef = useRef(null);
 
@@ -135,6 +137,25 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
     }
     setRankings((r) => [...r, { vendorSlug: slug, rank: r.length + 1, featured: false }]);
     setNewVendorSlug("");
+  };
+
+  useEffect(() => {
+    let alive = true;
+    fetchVendors({ category: cat.slug, limit: 100 }).then((res) => {
+      if (alive && res.data?.ok) setCatVendors(res.data.data || []);
+    });
+    return () => { alive = false; };
+  }, [cat.slug]);
+
+  const nameOf = (slug) => catVendors.find((v) => v.slug === slug)?.name || "";
+  const notRanked = catVendors.filter((v) => !rankings.some((r) => r.vendorSlug === v.slug));
+
+  // Add every vendor of this category that is not in the list yet, in the order the page shows them now.
+  const loadCurrent = () => {
+    setRankings((r) => {
+      const next = [...r, ...notRanked.map((v) => ({ vendorSlug: v.slug, rank: 0, featured: false }))];
+      return next.map((v, i) => ({ ...v, rank: i + 1 }));
+    });
   };
 
   const removeVendor = (slug) => setRankings((r) => r.filter((v) => v.vendorSlug !== slug));
@@ -363,8 +384,22 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
         {tab === "rankings" && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-gray-500">
-              Set the Top 10 vendor order. Vendors without rankings are shown from the database automatically sorted by pageCount. Add vendor slugs below.
+              Set the vendor order for this page: number 1 is shown first. With an empty list the page shows the vendors of this category
+              automatically (up to 20, sorted by pageCount). Once the list has vendors, the page shows <b>only</b> the vendors listed here, in this order.
             </p>
+
+            {rankings.length === 0 && catVendors.length > 0 ? (
+              <button onClick={loadCurrent} className="self-start rounded-lg border border-[#1d4882] px-4 py-2 text-sm font-semibold text-[#1d4882] hover:bg-[#EBF3FF]">
+                Load the {catVendors.length} vendors of this category to reorder
+              </button>
+            ) : null}
+            {rankings.length > 0 && notRanked.length > 0 ? (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {notRanked.length} vendor{notRanked.length === 1 ? "" : "s"} of this category {notRanked.length === 1 ? "is" : "are"} not in the list, so
+                {notRanked.length === 1 ? " it is" : " they are"} hidden on the page: {notRanked.slice(0, 6).map((v) => v.name).join(", ")}{notRanked.length > 6 ? "..." : ""}.{" "}
+                <button onClick={loadCurrent} className="font-semibold underline">Add {notRanked.length === 1 ? "it" : "them"} at the end</button>
+              </div>
+            ) : null}
 
             {/* Add vendor */}
             <div className="flex gap-2">
@@ -399,7 +434,10 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
                     <div className="w-7 h-7 rounded-full bg-[#1d4882] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
                       {i + 1}
                     </div>
-                    <span className="flex-1 text-sm font-semibold text-gray-800 font-mono">{v.vendorSlug}</span>
+                    <span className="flex-1 min-w-0">
+                      <span className="block truncate text-sm font-semibold text-gray-800">{nameOf(v.vendorSlug) || v.vendorSlug}</span>
+                      <span className="block truncate font-mono text-xs text-gray-400">{v.vendorSlug}</span>
+                    </span>
                     <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
                       <input
                         type="checkbox"

@@ -335,10 +335,11 @@ export const updateCityHubCompany = async (cityId, companySlug, formData) => {
 
 // ── Vendor Directory  Vendors ──────────────────────────
 
-export const fetchVendors = async ({ search = "", group = "", page = 1, limit = 50 } = {}) => {
+export const fetchVendors = async ({ search = "", group = "", category = "", page = 1, limit = 50 } = {}) => {
   try {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
+    if (category) params.set("category", category);
     if (group)  params.set("group",  group);
     params.set("page",  String(page));
     params.set("limit", String(limit));
