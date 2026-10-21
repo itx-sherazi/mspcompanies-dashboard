@@ -374,7 +374,7 @@ export default function AllHubCompaniesTab({ hubSlug, basePath = "/msp" } = {}) 
                             )}
                           </button>
                           <a
-                            href={basePath === "/top-mssp" ? `${FRONTEND_BASE}${basePath}/${row.citySlug}/${row.slug}` : `${FRONTEND_BASE}/managed-it-services/${row.slug}`}
+                            href={`${FRONTEND_BASE}/managed-it-services/${row.slug}`}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center justify-center rounded-lg border border-slate-200 p-2 text-[#0356A6] hover:bg-[#F5FAFF]"

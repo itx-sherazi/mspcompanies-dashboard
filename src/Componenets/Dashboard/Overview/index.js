@@ -46,7 +46,7 @@ const BRAND = "#1d4882";
 const SECTIONS = [
   { tab: "CityHub", label: "MSP City Pages", hint: "/msp/<city>", icon: FaMapMarkedAlt },
   { tab: "CountryHub", label: "Top MSPs Countries", hint: "/top-msps/<country>", icon: FaGlobeAmericas },
-  { tab: "MsspCountryHub", label: "Top MSSP Countries", hint: "/top-mssp/<country>", icon: FaGlobe },
+  { tab: "MasterSheet", label: "Master Sheet", hint: "MSP and MSSP upload", icon: FaGlobe },
   { tab: "ManagedIT", label: "Managed IT Services", hint: "/managed-it-services", icon: FaBuilding },
   { tab: "CyberSecurity", label: "Cybersecurity", hint: "/cybersecurity-companies", icon: FaShieldAlt },
   { tab: "VendorDirectory", label: "Vendor Directory", hint: "/tools · /best", icon: FaLayerGroup },
@@ -255,8 +255,8 @@ export default function Overview({ setActiveTab, canSee }) {
             <StatTile
               icon={Globe2}
               label="Country pages"
-              value={fmt(data.pages.topMsps.total + data.pages.topMssp.total)}
-              sub={`${fmt(data.pages.topMsps.total)} Top MSPs · ${fmt(data.pages.topMssp.total)} Top MSSP`}
+              value={fmt(data.pages.topMsps.total + data.pages.mssp.total)}
+              sub={`${fmt(data.pages.topMsps.total)} Top MSPs · ${fmt(data.pages.mssp.total)} MSSP (/mssp)`}
               onClick={() => go("CountryHub")}
             />
             <StatTile
@@ -306,7 +306,7 @@ export default function Overview({ setActiveTab, canSee }) {
               rows={[
                 { key: "city", label: "MSP city pages", count: data.pages.city.total, tab: "CityHub" },
                 { key: "topMsps", label: "Top MSPs country pages", count: data.pages.topMsps.total, tab: "CountryHub" },
-                { key: "topMssp", label: "Top MSSP country pages", count: data.pages.topMssp.total, tab: "MsspCountryHub" },
+                { key: "mssp", label: "MSSP pages (/mssp)", count: data.pages.mssp.total, tab: "MasterSheet" },
                 { key: "blogs", label: "Blog posts", count: data.pages.blogs.total, tab: "blog" },
                 { key: "cats", label: "Vendor categories", count: data.pages.categories.total, tab: "VendorDirectory" },
               ]}

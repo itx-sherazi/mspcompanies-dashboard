@@ -333,26 +333,6 @@ export const updateCityHubCompany = async (cityId, companySlug, formData) => {
   }
 };
 
-export const uploadCityCompaniesSheet = async (file, citySlug, hubSlug) => {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("citySlug", citySlug);
-    if (hubSlug) formData.append("hubSlug", hubSlug);
-    const response = await fetch(`${API_BASE_URL}/cities/upload-companies`, {
-      method: "POST",
-      headers: authHeaders(),
-      credentials: "include",
-      body: formData,
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Upload failed");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
-  }
-};
-
 // ── Vendor Directory  Vendors ──────────────────────────
 
 export const fetchVendors = async ({ search = "", group = "", page = 1, limit = 50 } = {}) => {
@@ -731,6 +711,49 @@ export const uploadMasterSheet = async (file, { mode = "preview", metro = false,
     const data = await response.json();
     if (!response.ok) throw new Error(data.message || "Master upload failed");
     return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
+  }
+};
+
+// ── MSSP master sheet (fills the MSSP directory and every /mssp page) ──
+
+const postMsspSheet = (file, mode) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("mode", mode);
+  return fetch(`${API_BASE_URL}/admin/mssp/upload`, { method: "POST", headers: authHeaders(), credentials: "include", body: formData });
+};
+
+export const uploadMsspSheet = async (file, { mode = "preview" } = {}) => {
+  try {
+    const response = await postMsspSheet(file, mode);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || "MSSP upload failed");
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
+  }
+};
+
+/** Downloads an Excel report (every page and the page each company goes on). Nothing is saved. */
+export const downloadMsspReport = async (file) => {
+  try {
+    const response = await postMsspSheet(file, "report");
+    if (!response.ok) {
+      let message = "Report failed";
+      try { message = (await response.json()).message || message; } catch (_) {}
+      throw new Error(message);
+    }
+    const url = URL.createObjectURL(await response.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mssp-import-report.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return { status: 200, data: { ok: true } };
   } catch (error) {
     return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
   }

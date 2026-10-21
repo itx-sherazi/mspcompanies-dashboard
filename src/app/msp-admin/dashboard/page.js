@@ -10,7 +10,6 @@ import AddUser from "@/Componenets/Dashboard/AddUser";
 import AllUsers from "@/Componenets/Dashboard/Users";
 import CityHubManagement from "@/Componenets/Dashboard/CityHub";
 import CountryHubManagement from "@/Componenets/Dashboard/CountryHub";
-import MsspCountryHubManagement from "@/Componenets/Dashboard/MsspCountryHub";
 import ListingRequests from "@/Componenets/Dashboard/ListingRequests";
 import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServices";
 import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
@@ -27,7 +26,6 @@ const SEO_ALLOWED_TABS = new Set([
   "Addblog",
   "CityHub",
   "CountryHub",
-  "MsspCountryHub",
   "ManagedIT",
   "CyberSecurity",
   "VendorDirectory",
@@ -99,8 +97,6 @@ export default function Dashboard() {
         return <CityHubManagement />;
       case "CountryHub":
         return <CountryHubManagement />;
-      case "MsspCountryHub":
-        return <MsspCountryHubManagement />;
       case "ListingRequests":
         return <ListingRequests />;
       case "ClaimRequests":
