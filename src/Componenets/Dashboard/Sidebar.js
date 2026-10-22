@@ -23,8 +23,7 @@ const SEO_ALLOWED_TABS = new Set([
   "Addblog",
   "CityHub",
   "CountryHub",
-  "ManagedIT",
-  "CyberSecurity",
+  "AllCompanies",
   "VendorDirectory",
   "CompanyQuality",
 ]);
@@ -145,22 +144,12 @@ export default function Sidebar({
           />
         )}
 
-        {show("ManagedIT") && (
+        {show("AllCompanies") && (
           <SidebarButton
             icon={<FaBuilding size={20} />}
-            label="Managed IT Services"
-            isActive={activeTab === "ManagedIT"}
-            onClick={() => setActiveTab("ManagedIT")}
-            sidebarOpen={sidebarOpen}
-          />
-        )}
-
-        {show("CyberSecurity") && (
-          <SidebarButton
-            icon={<FaShieldAlt size={20} />}
-            label="Cybersecurity"
-            isActive={activeTab === "CyberSecurity"}
-            onClick={() => setActiveTab("CyberSecurity")}
+            label="All Companies"
+            isActive={activeTab === "AllCompanies"}
+            onClick={() => setActiveTab("AllCompanies")}
             sidebarOpen={sidebarOpen}
           />
         )}

@@ -11,8 +11,7 @@ import AllUsers from "@/Componenets/Dashboard/Users";
 import CityHubManagement from "@/Componenets/Dashboard/CityHub";
 import CountryHubManagement from "@/Componenets/Dashboard/CountryHub";
 import ListingRequests from "@/Componenets/Dashboard/ListingRequests";
-import ManagedItServicesManagement from "@/Componenets/Dashboard/ManagedItServices";
-import CyberSecurityManagement from "@/Componenets/Dashboard/CyberSecurity";
+import AllCompanies from "@/Componenets/Dashboard/AllCompanies";
 import VendorDirectory from "@/Componenets/Dashboard/VendorDirectory";
 import CompanyQuality from "@/Componenets/Dashboard/CompanyQuality";
 import Overview from "@/Componenets/Dashboard/Overview";
@@ -26,8 +25,7 @@ const SEO_ALLOWED_TABS = new Set([
   "Addblog",
   "CityHub",
   "CountryHub",
-  "ManagedIT",
-  "CyberSecurity",
+  "AllCompanies",
   "VendorDirectory",
   "CompanyQuality",
 ]);
@@ -101,12 +99,10 @@ export default function Dashboard() {
         return <ListingRequests />;
       case "ClaimRequests":
         return <ClaimRequests />;
-      case "ManagedIT":
-        return <ManagedItServicesManagement />;
+      case "AllCompanies":
+        return <AllCompanies role={role} />;
       case "MasterSheet":
         return <MasterSheet />;
-      case "CyberSecurity":
-        return <CyberSecurityManagement />;
       case "VendorDirectory":
         return <VendorDirectory />;
       case "CompanyQuality":

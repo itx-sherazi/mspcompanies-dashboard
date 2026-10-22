@@ -589,39 +589,6 @@ export const deleteParentCategory = async (id) => {
 
 // ── Cybersecurity Companies ─────────────────────────────
 
-export const fetchCyberSecurityAdmin = async ({ q = "", page = 1, limit = 50 } = {}) => {
-  try {
-    const params = new URLSearchParams();
-    if (String(q).trim()) params.set("q", String(q).trim());
-    params.set("page", String(page));
-    params.set("limit", String(limit));
-    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies?${params}`, {
-      headers: authHeaders(),
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to load companies");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message } };
-  }
-};
-
-export const deleteCyberSecurityCompany = async (slug) => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/admin/cybersecurity-companies/${encodeURIComponent(slug)}`, {
-      method: "DELETE",
-      headers: authHeaders(),
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Delete failed");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message } };
-  }
-};
-
 // ── Managed IT Services ─────────────────────────────────
 
 // ── Master sheet (fills the directory and every city / state / country page) ──
@@ -727,39 +694,36 @@ export const downloadPlaceReport = async (kind, file, filename) => {
   }
 };
 
-export const fetchManagedItAdmin = async ({ q = "", page = 1, limit = 50, eligible = "" } = {}) => {
-  try {
-    const params = new URLSearchParams();
-    if (String(q).trim()) params.set("q", String(q).trim());
-    if (eligible === "yes" || eligible === "no") params.set("eligible", eligible);
-    params.set("page", String(page));
-    params.set("limit", String(limit));
-    const response = await fetch(`${API_BASE_URL}/admin/managed-it-services?${params}`, {
-      headers: authHeaders(),
-      credentials: "include",
-    });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Failed to load companies");
-    return { status: response.status, data };
-  } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message } };
-  }
-};
+// ── All companies (Managed IT, MSSP and cybersecurity together) ──────────
 
-export const deleteManagedItCompany = async (slug) => {
+async function companyAdminRequest(path, { method = "GET", body } = {}) {
   try {
-    const response = await fetch(`${API_BASE_URL}/admin/managed-it-services/${encodeURIComponent(slug)}`, {
-      method: "DELETE",
-      headers: authHeaders(),
+    const response = await fetch(`${API_BASE_URL}/admin/companies${path}`, {
+      method,
+      headers: authHeaders(body ? { "Content-Type": "application/json" } : {}),
       credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.message || "Delete failed");
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { status: response.status, data: { ok: false, ...data, message: data.message || "Request failed" } };
     return { status: response.status, data };
   } catch (error) {
-    return { status: 500, data: { ok: false, message: error.message } };
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
   }
+}
+
+/** directory: "all" | "mit" | "mssp" | "cyber" */
+export const fetchCompaniesAdmin = ({ directory = "all", q = "", eligible = "", published = "", page = 1, limit = 50 } = {}) => {
+  const params = new URLSearchParams({ directory, page: String(page), limit: String(limit) });
+  if (String(q).trim()) params.set("q", String(q).trim());
+  if (eligible) params.set("eligible", eligible);
+  if (published) params.set("published", published);
+  return companyAdminRequest(`?${params}`);
 };
+export const fetchCompanyAdmin = (directory, slug) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`);
+export const createCompanyAdmin = (directory, body) => companyAdminRequest(`/${directory}`, { method: "POST", body });
+export const updateCompanyAdmin = (directory, slug, body) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`, { method: "PUT", body });
+export const deleteCompanyAdmin = (directory, slug) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`, { method: "DELETE" });
 
 export const wipeListingCompanies = async () => {
   try {
