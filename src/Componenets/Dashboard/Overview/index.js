@@ -214,8 +214,8 @@ export default function Overview({ setActiveTab, canSee }) {
             <StatTile
               icon={Building2}
               label="Total companies"
-              value={fmt(data.companies.total)}
-              sub={`+ ${fmt(data.companies.vendors)} vendors`}
+              value={fmt(data.companies?.total)}
+              sub={`+ ${fmt(data.companies?.vendors)} vendors`}
               onClick={() => go("MspPages")}
             />
             {leads && (
@@ -248,22 +248,22 @@ export default function Overview({ setActiveTab, canSee }) {
             <StatTile
               icon={MapPin}
               label="City pages"
-              value={fmt(data.pages.city.total)}
-              sub={`${fmt(data.pages.city.published)} published · /msp`}
+              value={fmt(data.pages?.city?.total)}
+              sub={`${fmt(data.pages?.city?.published)} published · /msp`}
               onClick={() => go("MspPages")}
             />
             <StatTile
               icon={Globe2}
               label="Country pages"
-              value={fmt(data.pages.topMsps.total + data.pages.mssp.total)}
-              sub={`${fmt(data.pages.topMsps.total)} Top MSPs · ${fmt(data.pages.mssp.total)} MSSP (/mssp)`}
+              value={fmt((data.pages?.topMsps?.total || 0) + (data.pages?.mssp?.total || 0))}
+              sub={`${fmt(data.pages?.topMsps?.total)} Top MSPs · ${fmt(data.pages?.mssp?.total)} MSSP (/mssp)`}
               onClick={() => go("MspPages")}
             />
             <StatTile
               icon={FileText}
               label="Blog posts"
-              value={fmt(data.pages.blogs.total)}
-              sub={`${fmt(data.pages.blogs.published)} published`}
+              value={fmt(data.pages?.blogs?.total)}
+              sub={`${fmt(data.pages?.blogs?.published)} published`}
               onClick={() => go("blog")}
             />
           </>
@@ -274,7 +274,7 @@ export default function Overview({ setActiveTab, canSee }) {
         {/* Companies by source */}
         <Card title="Companies by page type" action={<span className="text-xs text-gray-500">Click a row to manage it</span>}>
           {!data ? <Skeleton h="h-48" /> : (
-            <BarList rows={data.companies.breakdown} onRowClick={(r) => go(r.tab)} />
+            <BarList rows={data.companies?.breakdown || []} onRowClick={(r) => go(r.tab)} />
           )}
         </Card>
 
@@ -304,11 +304,11 @@ export default function Overview({ setActiveTab, canSee }) {
           <Card title="Pages">
             <BarList
               rows={[
-                { key: "city", label: "MSP city pages", count: data.pages.city.total, tab: "MspPages" },
-                { key: "topMsps", label: "Top MSPs country pages", count: data.pages.topMsps.total, tab: "MspPages" },
-                { key: "mssp", label: "MSSP pages (/mssp)", count: data.pages.mssp.total, tab: "MasterSheet" },
-                { key: "blogs", label: "Blog posts", count: data.pages.blogs.total, tab: "blog" },
-                { key: "cats", label: "Vendor categories", count: data.pages.categories.total, tab: "VendorDirectory" },
+                { key: "city", label: "MSP city pages", count: data.pages?.city?.total, tab: "MspPages" },
+                { key: "topMsps", label: "Top MSPs country pages", count: data.pages?.topMsps?.total, tab: "MspPages" },
+                { key: "mssp", label: "MSSP pages (/mssp)", count: data.pages?.mssp?.total, tab: "MasterSheet" },
+                { key: "blogs", label: "Blog posts", count: data.pages?.blogs?.total, tab: "blog" },
+                { key: "cats", label: "Vendor categories", count: data.pages?.categories?.total, tab: "VendorDirectory" },
               ]}
               onRowClick={(r) => go(r.tab)}
             />
