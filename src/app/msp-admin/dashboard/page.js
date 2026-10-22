@@ -20,7 +20,6 @@ import Overview from "@/Componenets/Dashboard/Overview";
 import MasterSheet from "@/Componenets/Dashboard/MasterSheet";
 import ClaimRequests from "@/Componenets/Dashboard/ClaimRequests";
 
-// Tabs visible to the "seo" role  must match Sidebar.js's SEO_ALLOWED_TABS.
 const SEO_ALLOWED_TABS = new Set([
   "Overview",
   "blog",
