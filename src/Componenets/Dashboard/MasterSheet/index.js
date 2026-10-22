@@ -36,7 +36,7 @@ export default function MasterSheet() {
           kind="mssp"
           reportName="mssp-import-report.xlsx"
           fileHint="Select the MSSP master .xlsx"
-          intro={<>One Excel file fills the MSSP directory (<b>/managed-security-service-providers</b>) and its country, state and city pages under <b>/mssp</b>. Same columns as the MSP master sheet. An upload adds new companies and updates the ones already there, nothing is deleted, and at most 5,000 companies fit in one upload. Always run a preview first.</>}
+          intro={<>One Excel file fills the MSSP directory (<b>/managed-security-service-providers</b>) and its country, state and city pages under <b>/mssp</b>. Same columns as the MSP master sheet. An upload adds new companies and updates the ones already there, nothing is deleted, and at most 10,000 companies fit in one upload. Always run a preview first.</>}
           rule="Which states and cities get a page is set in the code (backend/config/msspPages.js). Countries with too few companies get none; their companies stay in the directory."
           label="MSSP"
         />
@@ -46,7 +46,7 @@ export default function MasterSheet() {
           kind="cyber"
           reportName="cybersecurity-import-report.xlsx"
           fileHint="Select the cybersecurity master .xlsx"
-          intro={<>One Excel file fills the cybersecurity directory (<b>/cybersecurity-companies</b>) and its country, state and city pages (<b>/cybersecurity-companies-in-...</b>). Same columns as the MSP master sheet. A company with a Live Slug keeps its profile link. An upload adds new companies and updates the ones already there, nothing is deleted, and at most 5,000 companies fit in one upload. Always run a preview first.</>}
+          intro={<>One Excel file fills the cybersecurity directory (<b>/cybersecurity-companies</b>) and its country, state and city pages (<b>/cybersecurity-companies-in-...</b>). Same columns as the MSP master sheet. A company with a Live Slug keeps its profile link. An upload adds new companies and updates the ones already there, nothing is deleted, and at most 10,000 companies fit in one upload. Always run a preview first.</>}
           rule="A country, state or city gets a page when it has at least 10 companies (backend/config/cyberPages.js). Smaller places stay in the directory."
           label="cybersecurity"
         />

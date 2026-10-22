@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { updateCityAdmin } from "@/services/api";
 import axios from "axios";
 
-const CityContentEditor = ({ cityData, onBack, refreshData }) => {
+/** `save(content)` replaces the default save (the City API) for pages that live elsewhere, like the MSSP and cybersecurity pages. */
+const CityContentEditor = ({ cityData, onBack, refreshData, save }) => {
   const [body, setBody] = useState("");
   const [loading, setLoading] = useState(false);
   const editorRef = useRef(null);
@@ -96,7 +97,7 @@ const CityContentEditor = ({ cityData, onBack, refreshData }) => {
     setLoading(true);
     try {
       await deleteRemovedImages(lastSavedContent, body);
-      const res = await updateCityAdmin(cityData._id, { content: body });
+      const res = save ? await save(body) : await updateCityAdmin(cityData._id, { content: body });
       if (!res?.data?.ok) {
         toast.error(res?.data?.message || "Failed to save city content");
         return;

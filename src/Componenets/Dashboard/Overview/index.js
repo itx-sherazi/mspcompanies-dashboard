@@ -44,10 +44,11 @@ const BRAND = "#1d4882";
 
 // Every dashboard section, for the quick-links grid (same tabs as Sidebar.js).
 const SECTIONS = [
-  { tab: "CityHub", label: "MSP City Pages", hint: "/msp/<city>", icon: FaMapMarkedAlt },
-  { tab: "CountryHub", label: "Top MSPs Countries", hint: "/top-msps/<country>", icon: FaGlobeAmericas },
   { tab: "MasterSheet", label: "Master Sheet", hint: "MSP and MSSP upload", icon: FaGlobe },
   { tab: "AllCompanies", label: "All Companies", hint: "Managed IT, MSSP, cybersecurity", icon: FaBuilding },
+  { tab: "MspPages", label: "MSP City and Country", hint: "All /msp and /top-msps pages", icon: FaMapMarkedAlt },
+  { tab: "MsspPages", label: "MSSP City and Country", hint: "All /mssp pages", icon: FaMapMarkedAlt },
+  { tab: "CyberPages", label: "Cyber City and Country", hint: "All cybersecurity place pages", icon: FaMapMarkedAlt },
   { tab: "VendorDirectory", label: "Vendor Directory", hint: "/tools · /best", icon: FaLayerGroup },
   { tab: "CompanyQuality", label: "Data Quality", hint: "Bad characters · duplicates", icon: FaBroom },
   { tab: "blog", label: "All Blogs", hint: "/blog", icon: FaRegNewspaper },
@@ -215,7 +216,7 @@ export default function Overview({ setActiveTab, canSee }) {
               label="Total companies"
               value={fmt(data.companies.total)}
               sub={`+ ${fmt(data.companies.vendors)} vendors`}
-              onClick={() => go("CityHub")}
+              onClick={() => go("MspPages")}
             />
             {leads && (
               <StatTile
@@ -249,14 +250,14 @@ export default function Overview({ setActiveTab, canSee }) {
               label="City pages"
               value={fmt(data.pages.city.total)}
               sub={`${fmt(data.pages.city.published)} published · /msp`}
-              onClick={() => go("CityHub")}
+              onClick={() => go("MspPages")}
             />
             <StatTile
               icon={Globe2}
               label="Country pages"
               value={fmt(data.pages.topMsps.total + data.pages.mssp.total)}
               sub={`${fmt(data.pages.topMsps.total)} Top MSPs · ${fmt(data.pages.mssp.total)} MSSP (/mssp)`}
-              onClick={() => go("CountryHub")}
+              onClick={() => go("MspPages")}
             />
             <StatTile
               icon={FileText}
@@ -303,8 +304,8 @@ export default function Overview({ setActiveTab, canSee }) {
           <Card title="Pages">
             <BarList
               rows={[
-                { key: "city", label: "MSP city pages", count: data.pages.city.total, tab: "CityHub" },
-                { key: "topMsps", label: "Top MSPs country pages", count: data.pages.topMsps.total, tab: "CountryHub" },
+                { key: "city", label: "MSP city pages", count: data.pages.city.total, tab: "MspPages" },
+                { key: "topMsps", label: "Top MSPs country pages", count: data.pages.topMsps.total, tab: "MspPages" },
                 { key: "mssp", label: "MSSP pages (/mssp)", count: data.pages.mssp.total, tab: "MasterSheet" },
                 { key: "blogs", label: "Blog posts", count: data.pages.blogs.total, tab: "blog" },
                 { key: "cats", label: "Vendor categories", count: data.pages.categories.total, tab: "VendorDirectory" },

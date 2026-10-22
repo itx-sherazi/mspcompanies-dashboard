@@ -725,6 +725,30 @@ export const createCompanyAdmin = (directory, body) => companyAdminRequest(`/${d
 export const updateCompanyAdmin = (directory, slug, body) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`, { method: "PUT", body });
 export const deleteCompanyAdmin = (directory, slug) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`, { method: "DELETE" });
 
+// ── MSSP and cybersecurity location pages (heading, meta, text, questions) ──
+
+async function pageAdminRequest(directory, slug, { method = "GET", body } = {}) {
+  const route = directory === "cyber" ? "cybersecurity-pages" : "mssp-pages";
+  try {
+    const response = await fetch(`${API_BASE_URL}/admin/${route}${slug ? `/${encodeURIComponent(slug)}` : ""}`, {
+      method,
+      headers: authHeaders(body ? { "Content-Type": "application/json" } : {}),
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { status: response.status, data: { ok: false, ...data, message: data.message || "Request failed" } };
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Something went wrong" } };
+  }
+}
+
+/** directory: "mssp" | "cyber" */
+export const fetchDirectoryPages = (directory) => pageAdminRequest(directory);
+export const fetchDirectoryPage = (directory, slug) => pageAdminRequest(directory, slug);
+export const updateDirectoryPage = (directory, slug, body) => pageAdminRequest(directory, slug, { method: "PUT", body });
+
 export const wipeListingCompanies = async () => {
   try {
     const response = await fetch(`${API_BASE_URL}/admin/wipe-listing-companies`, {

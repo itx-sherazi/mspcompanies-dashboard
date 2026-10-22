@@ -106,7 +106,7 @@ export default function MspSheet() {
 
         <div className="mt-4 space-y-2 text-sm text-gray-700">
           <p className="rounded-lg bg-blue-50 p-3 text-xs text-blue-900">
-            An upload <b>adds</b> new companies and <b>updates</b> the ones that are already in the Managed IT directory. Nothing is deleted, and a blank cell in the sheet never wipes a value that is stored. At most 5,000 companies per upload.
+            An upload <b>adds</b> new companies and <b>updates</b> the ones that are already in the Managed IT directory. Nothing is deleted, and a blank cell in the sheet never wipes a value that is stored. At most 10,000 companies per upload.
           </p>
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={createPages} onChange={(e) => { setCreatePages(e.target.checked); setPreview(null); }} className="mt-1" />

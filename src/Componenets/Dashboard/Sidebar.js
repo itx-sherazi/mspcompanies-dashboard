@@ -24,6 +24,9 @@ const SEO_ALLOWED_TABS = new Set([
   "CityHub",
   "CountryHub",
   "AllCompanies",
+  "MspPages",
+  "MsspPages",
+  "CyberPages",
   "VendorDirectory",
   "CompanyQuality",
 ]);
@@ -114,26 +117,6 @@ export default function Sidebar({
           />
         )}
 
-        {show("CityHub") && (
-          <SidebarButton
-            icon={<FaMapMarkedAlt size={20} />}
-            label="City hub (MSP)"
-            isActive={activeTab === "CityHub"}
-            onClick={() => setActiveTab("CityHub")}
-            sidebarOpen={sidebarOpen}
-          />
-        )}
-
-        {show("CountryHub") && (
-          <SidebarButton
-            icon={<FaGlobeAmericas size={20} />}
-            label="Top MSPs (Country)"
-            isActive={activeTab === "CountryHub"}
-            onClick={() => setActiveTab("CountryHub")}
-            sidebarOpen={sidebarOpen}
-          />
-        )}
-
         {show("MasterSheet") && (
           <SidebarButton
             icon={<FaLayerGroup size={20} />}
@@ -150,6 +133,36 @@ export default function Sidebar({
             label="All Companies"
             isActive={activeTab === "AllCompanies"}
             onClick={() => setActiveTab("AllCompanies")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("MspPages") && (
+          <SidebarButton
+            icon={<FaMapMarkedAlt size={20} />}
+            label="MSP City and Country"
+            isActive={activeTab === "MspPages"}
+            onClick={() => setActiveTab("MspPages")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("MsspPages") && (
+          <SidebarButton
+            icon={<FaMapMarkedAlt size={20} />}
+            label="MSSP City and Country"
+            isActive={activeTab === "MsspPages"}
+            onClick={() => setActiveTab("MsspPages")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("CyberPages") && (
+          <SidebarButton
+            icon={<FaMapMarkedAlt size={20} />}
+            label="Cyber City and Country"
+            isActive={activeTab === "CyberPages"}
+            onClick={() => setActiveTab("CyberPages")}
             sidebarOpen={sidebarOpen}
           />
         )}
