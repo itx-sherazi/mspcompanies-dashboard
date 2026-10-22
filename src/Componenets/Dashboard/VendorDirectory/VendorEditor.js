@@ -36,6 +36,7 @@ const EMPTY = {
   integrations: [], bestFor: "",
   pros: [], cons: [],
   categories: [], groups: [],
+  categoryLinks: {},
 };
 
 export default function VendorEditor({ vendor: initialVendor, onBack, onSaved }) {
@@ -71,6 +72,8 @@ export default function VendorEditor({ vendor: initialVendor, onBack, onSaved })
       cons:         toArr(initialVendor.cons),
       categories:   toArr(initialVendor.categories),
       groups:       toArr(initialVendor.groups),
+      // the API sends [{ category, url }], the form edits { category: url }
+      categoryLinks: Object.fromEntries((initialVendor.categoryLinks || []).map((l) => [l.category, l.url])),
     };
   });
 
@@ -106,7 +109,11 @@ export default function VendorEditor({ vendor: initialVendor, onBack, onSaved })
     if (!form.slug.trim()) { toast.error("Slug required"); return; }
 
     setSaving(true);
-    const payload = { ...form, founded: form.founded ? Number(form.founded) : null };
+    // only the categories the vendor is in, and only the ones with a link
+    const categoryLinks = form.categories
+      .filter((c) => String(form.categoryLinks[c] || "").trim())
+      .map((c) => ({ category: c, url: String(form.categoryLinks[c]).trim() }));
+    const payload = { ...form, founded: form.founded ? Number(form.founded) : null, categoryLinks };
 
     const res = isNew
       ? await createVendor(payload)
@@ -458,6 +465,24 @@ export default function VendorEditor({ vendor: initialVendor, onBack, onSaved })
                 mono
               />
             </Field>
+
+            {form.categories.length > 0 && (
+              <Field label="Website link per category" hint="optional: the Visit website button on that /best page goes here. Empty = the vendor website above">
+                <div className="flex flex-col gap-2">
+                  {form.categories.map((c) => (
+                    <div key={c} className="flex items-center gap-3">
+                      <span className="w-56 shrink-0 truncate font-mono text-xs text-gray-600" title={c}>{c}</span>
+                      <input
+                        className={INPUT}
+                        value={form.categoryLinks[c] || ""}
+                        onChange={(e) => set("categoryLinks", { ...form.categoryLinks, [c]: e.target.value })}
+                        placeholder={form.website || "https://"}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
         )}
 
