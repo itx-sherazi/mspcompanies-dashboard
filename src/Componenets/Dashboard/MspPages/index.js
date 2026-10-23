@@ -12,6 +12,7 @@ import {
 } from "@/services/api";
 import AllHubCompaniesTab from "../CityHub/AllHubCompaniesTab";
 import CityContentEditor from "../CityHub/CityContentEditor";
+import { formatUpdated, byUpdated } from "../formatUpdated";
 import { Search, Plus, Trash2, Eye, EyeOff, ExternalLink, Pencil, Users, FileText, X } from "lucide-react";
 
 const FRONTEND_BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
@@ -31,6 +32,7 @@ export default function MspPages() {
   const [loading, setLoading] = useState(true);
   const [hub, setHub] = useState("all");
   const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState("updated");
   const [q, setQ] = useState("");
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -66,8 +68,8 @@ export default function MspPages() {
       .filter((p) => hub === "all" || p.hubSlug === hub)
       .filter((p) => status === "all" || (status === "live" ? p.isPublished : !p.isPublished))
       .filter((p) => !term || `${p.name} ${p.slug} ${p.state || ""}`.toLowerCase().includes(term))
-      .sort((x, y) => String(x.name).localeCompare(String(y.name)));
-  }, [pages, hub, status, q]);
+      .sort((x, y) => (sort === "updated" ? byUpdated(x, y) : 0) || String(x.name).localeCompare(String(y.name)));
+  }, [pages, hub, status, q, sort]);
 
   const openEdit = (p) =>
     setForm({
@@ -186,6 +188,10 @@ export default function MspPages() {
         {chip("all", "All", counts.all)}
         {chip("managed-service-providers", "City and state", counts["managed-service-providers"])}
         {chip("top-msps", "Country", counts["top-msps"])}
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm">
+          <option value="updated">Recently updated first</option>
+          <option value="name">Name A to Z</option>
+        </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm">
           <option value="all">Any status</option>
           <option value="live">Published</option>
@@ -214,14 +220,15 @@ export default function MspPages() {
               <th className="px-4 py-3">State</th>
               <th className="px-4 py-3 text-right">Companies</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Last updated</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">Loading...</td></tr>
             ) : shown.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-400">No pages match.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">No pages match.</td></tr>
             ) : (
               shown.map((p) => (
                 <tr key={p._id} className="hover:bg-slate-50/60">
@@ -235,6 +242,7 @@ export default function MspPages() {
                   <td className="px-4 py-2.5">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.isPublished ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{p.isPublished ? "Published" : "Unpublished"}</span>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-xs text-slate-500" title={p.editedApprox && p.editedAt ? "Close to the last edit: this page was edited before the edit time was kept. A sheet upload can move it later." : "When this page was last edited here. A sheet upload does not change it."}>{formatUpdated(p.editedAt, p.editedApprox)}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1 text-slate-500">
                       <button title="Edit details and SEO" onClick={() => openEdit(p)} className="rounded p-1.5 hover:bg-slate-100"><Pencil size={15} /></button>

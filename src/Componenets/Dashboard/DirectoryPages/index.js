@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
 import { fetchDirectoryPages, fetchDirectoryPage, updateDirectoryPage } from "@/services/api";
 import CityContentEditor from "../CityHub/CityContentEditor";
+import { formatUpdated, byUpdated } from "../formatUpdated";
 import { Search, Eye, EyeOff, ExternalLink, Pencil, FileText, X } from "lucide-react";
 
 const FRONTEND_BASE = process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
@@ -27,6 +28,7 @@ export default function DirectoryPages({ directory }) {
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState("all");
   const [status, setStatus] = useState("all");
+  const [sort, setSort] = useState("updated");
   const [q, setQ] = useState("");
   const [form, setForm] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -52,11 +54,13 @@ export default function DirectoryPages({ directory }) {
 
   const shown = useMemo(() => {
     const term = q.trim().toLowerCase();
-    return pages
+    const rows = pages
       .filter((p) => type === "all" || p.type === type)
       .filter((p) => status === "all" || (status === "live" ? p.isPublished : !p.isPublished))
       .filter((p) => !term || `${p.name} ${p.slug} ${p.stateName || ""} ${p.countryName || ""}`.toLowerCase().includes(term));
-  }, [pages, type, status, q]);
+    // "name" keeps the order the server sends (country, type, name). The sort is stable, so equal times keep it too.
+    return sort === "updated" ? rows.sort(byUpdated) : rows;
+  }, [pages, type, status, q, sort]);
 
   const openEdit = async (p) => {
     const res = await fetchDirectoryPage(directory, p.slug);
@@ -131,6 +135,10 @@ export default function DirectoryPages({ directory }) {
 
       <div className="flex flex-wrap items-center gap-2">
         {TYPES.map(chip)}
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm">
+          <option value="updated">Recently updated first</option>
+          <option value="name">Country, type, name</option>
+        </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm">
           <option value="all">Any status</option>
           <option value="live">Published</option>
@@ -152,14 +160,15 @@ export default function DirectoryPages({ directory }) {
               <th className="px-4 py-3 text-right">Companies</th>
               <th className="px-4 py-3">Text</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Last updated</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">Loading...</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-slate-400">Loading...</td></tr>
             ) : shown.length === 0 ? (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-400">No pages match.</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-slate-400">No pages match.</td></tr>
             ) : (
               shown.map((p) => (
                 <tr key={p.slug} className="hover:bg-slate-50/60">
@@ -176,6 +185,7 @@ export default function DirectoryPages({ directory }) {
                   <td className="px-4 py-2.5">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.isPublished ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-500"}`}>{p.isPublished ? "Published" : "Unpublished"}</span>
                   </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-xs text-slate-500" title="When this page was last edited here. A sheet upload does not change it.">{formatUpdated(p.editedAt)}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex items-center justify-end gap-1 text-slate-500">
                       <button title="Edit heading, meta and FAQs" onClick={() => openEdit(p)} className="rounded p-1.5 hover:bg-slate-100"><Pencil size={15} /></button>

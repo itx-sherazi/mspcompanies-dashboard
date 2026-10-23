@@ -385,7 +385,8 @@ export default function CategoryEditor({ category: initialCategory, onBack, refr
           <div className="flex flex-col gap-4">
             <p className="text-sm text-gray-500">
               Set the vendor order for this page: number 1 is shown first. With an empty list the page shows the vendors of this category
-              automatically (up to 20, sorted by pageCount). Once the list has vendors, the page shows <b>only</b> the vendors listed here, in this order.
+              automatically (up to 10, A to Z). Once the list has vendors, the page shows <b>only</b> the vendors listed here, in this order, and
+              only the <b>first 10</b>: a vendor ranked 11 or lower is not shown on the page.
             </p>
 
             {rankings.length === 0 && catVendors.length > 0 ? (
