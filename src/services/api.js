@@ -720,6 +720,19 @@ export const fetchCompaniesAdmin = ({ directory = "all", q = "", eligible = "", 
   if (published) params.set("published", published);
   return companyAdminRequest(`?${params}`);
 };
+/** Uploads a company logo to Cloudinary (through the backend). Answers { ok, url }. */
+export const uploadCompanyLogo = async (file) => {
+  try {
+    const body = new FormData();
+    body.append("image", file);
+    const response = await fetch(`${API_BASE_URL}/admin/companies/upload-logo`, { method: "POST", headers: authHeaders(), credentials: "include", body });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) return { status: response.status, data: { ok: false, ...data, message: data.message || "Upload failed" } };
+    return { status: response.status, data };
+  } catch (error) {
+    return { status: 500, data: { ok: false, message: error.message || "Upload failed" } };
+  }
+};
 export const fetchCompanyAdmin = (directory, slug) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`);
 export const createCompanyAdmin = (directory, body) => companyAdminRequest(`/${directory}`, { method: "POST", body });
 export const updateCompanyAdmin = (directory, slug, body) => companyAdminRequest(`/${directory}/${encodeURIComponent(slug)}`, { method: "PUT", body });

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
-import { fetchCompanyAdmin, createCompanyAdmin, updateCompanyAdmin } from "@/services/api";
-import { X, Plus, Trash2, ExternalLink, Building2, Loader2 } from "lucide-react";
+import { fetchCompanyAdmin, createCompanyAdmin, updateCompanyAdmin, uploadCompanyLogo } from "@/services/api";
+import { X, Plus, Trash2, ExternalLink, Building2, Loader2, Upload } from "lucide-react";
 
 export const DIRECTORY_LABEL = { mit: "Managed IT", mssp: "MSSP", cyber: "Cybersecurity" };
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
@@ -70,6 +70,8 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState("basics");
   const [error, setError] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef(null);
 
   useEffect(() => {
     if (isNew) return;
@@ -86,6 +88,21 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
     });
     return () => { alive = false; };
   }, [isNew, directory, slug]);
+
+  // Sends the chosen picture to Cloudinary and puts its link in the Logo field. The company is saved with the Save button.
+  const uploadLogo = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return toast.error("The picture is larger than 5 MB");
+    setUploading(true);
+    const res = await uploadCompanyLogo(file);
+    setUploading(false);
+    if (res.data?.ok && res.data.url) {
+      setForm((f) => ({ ...f, image: res.data.url }));
+      toast.success("Picture uploaded. Press Save to keep it.");
+    } else toast.error(res.data?.message || "Upload failed");
+  };
 
   const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
   const input = (key, props = {}) => <input className={INPUT} value={form[key]} onChange={(e) => set(key, e.target.value)} {...props} />;
@@ -172,6 +189,10 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
                     <div className="flex items-center gap-3">
                       {form.image ? <img src={form.image} alt="" className="h-10 w-10 rounded border border-gray-200 bg-white object-contain p-0.5" onError={(e) => { e.currentTarget.style.display = "none"; }} /> : null}
                       <input className={INPUT} value={form.image} onChange={(e) => set("image", e.target.value)} placeholder="https://..." />
+                      <input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp,image/gif" className="hidden" onChange={uploadLogo} />
+                      <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading} className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#1d4882] px-3 py-2 text-sm font-semibold text-[#1d4882] hover:bg-[#EBF3FF] disabled:opacity-50">
+                        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />} {uploading ? "Uploading..." : "Upload"}
+                      </button>
                     </div>
                   </Field>
                   <Field label="Employees" hint="for example 20 - 50">{input("employees")}</Field>
