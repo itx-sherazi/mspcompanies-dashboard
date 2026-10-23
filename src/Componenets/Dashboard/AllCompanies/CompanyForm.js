@@ -101,6 +101,10 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
     setSaving(false);
     if (res.data?.ok) {
       toast.success(isNew ? "Company added" : "Company saved");
+      // A Managed IT company is put on the pages it belongs to, and taken off the others, when it is added or its location changes.
+      const placed = res.data.placed;
+      if (placed?.added?.length) toast.info(`Now on: ${placed.added.map((p) => p.name).join(", ")}`, { autoClose: 9000 });
+      if (placed?.removed?.length) toast.info(`Taken off: ${placed.removed.map((p) => p.name).join(", ")}`, { autoClose: 9000 });
       if (res.data.warning) toast.info(res.data.warning, { autoClose: 9000 });
       onSaved?.(res.data.data);
     } else {
