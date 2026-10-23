@@ -19,7 +19,7 @@ const EMPTY = {
   tagline: "", profileSummary: "", specialization: "", clientSizeFocus: "", supportHours: "", bookingUrl: "",
   companyServices: "", companyPartners: "", technologies: "", industriesServed: "", certifications: "", complianceFrameworks: "", keywords: "",
   linkedinUrl: "", facebookUrl: "", twitterUrl: "",
-  faqs: [], indexEligible: false, isPublished: true,
+  faqs: [], indexEligible: false, isPublished: true, isSponsored: false,
 };
 
 const toForm = (c) => {
@@ -30,6 +30,7 @@ const toForm = (c) => {
     else if (k === "faqs") f.faqs = (c.faqs || []).map((x) => ({ question: x.question || "", answer: x.answer || "" }));
     else if (k === "indexEligible") f.indexEligible = Boolean(c.indexEligible);
     else if (k === "isPublished") f.isPublished = c.isPublished !== false;
+    else if (k === "isSponsored") f.isSponsored = Boolean(c.isSponsored);
     else f[k] = c[k];
   }
   return f;
@@ -265,6 +266,15 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
                       <span className="block text-xs text-gray-500">Google may index the profile only when this is ticked (and, for MSSP and cybersecurity, once indexing of profiles is switched on in the website code).</span>
                     </span>
                   </label>
+                  {directory === "mit" ? (
+                    <label className="flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50/40 p-4">
+                      <input type="checkbox" className="mt-1" checked={form.isSponsored} onChange={(e) => set("isSponsored", e.target.checked)} />
+                      <span>
+                        <b className="text-sm text-gray-800">Sponsored</b>
+                        <span className="block text-xs text-gray-500">The company is shown as sponsored, at the top, on its city, state and country pages. Untick to take the mark off.</span>
+                      </span>
+                    </label>
+                  ) : null}
                 </div>
               )}
             </div>

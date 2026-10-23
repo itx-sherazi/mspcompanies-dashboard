@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { fetchCompaniesAdmin, updateCompanyAdmin, deleteCompanyAdmin } from "@/services/api";
 import CompanyForm, { DIRECTORY_LABEL } from "./CompanyForm";
 import DangerZone from "./DangerZone";
-import { Search, Plus, Pencil, Trash2, Globe, ExternalLink, MapPin, ChevronLeft, ChevronRight, Building2, AlertTriangle } from "lucide-react";
+import { Search, Plus, Pencil, Trash2, Globe, ExternalLink, MapPin, ChevronLeft, ChevronRight, Building2, AlertTriangle, Star } from "lucide-react";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
 const PROFILE_PATH = { mit: "/managed-it-services", mssp: "/managed-security-service-providers", cyber: "/cybersecurity-companies" };
@@ -65,10 +65,17 @@ export default function AllCompanies({ role }) {
 
   // switch Index Eligible or Published without opening the form
   const flip = async (r, field) => {
-    const next = field === "indexEligible" ? !r.indexEligible : r.isPublished === false;
+    const next = field === "indexEligible" ? !r.indexEligible : field === "isSponsored" ? !r.isSponsored : r.isPublished === false;
     const res = await updateCompanyAdmin(r.directory, r.slug, { [field]: next });
-    if (res.data?.ok) setRows((list) => list.map((x) => (key(x) === key(r) ? { ...x, [field]: next } : x)));
-    else toast.error(res.data?.message || "Could not save");
+    if (res.data?.ok) {
+      setRows((list) => list.map((x) => (key(x) === key(r) ? { ...x, [field]: next } : x)));
+      // A sponsored company is put on the city, state and country pages it belongs to.
+      const placed = res.data.placed;
+      if (field === "isSponsored") {
+        const pages = (next ? placed?.added : placed?.removed) || [];
+        toast.success(next ? `Sponsored. It shows as sponsored on its city, state and country pages${pages.length ? `, newly added to: ${pages.map((p) => p.name).join(", ")}` : ""}` : "Sponsorship removed");
+      }
+    } else toast.error(res.data?.message || "Could not save");
   };
 
   const doDelete = async () => {
@@ -161,6 +168,7 @@ export default function AllCompanies({ role }) {
                   <th className="px-3 py-3 font-semibold">Directory</th>
                   <th className="px-3 py-3 font-semibold">Location</th>
                   <th className="px-3 py-3 font-semibold">Index</th>
+                  <th className="px-3 py-3 font-semibold">Sponsored</th>
                   <th className="px-3 py-3 font-semibold">Status</th>
                   <th className="px-3 py-3 font-semibold">Links</th>
                   <th className="px-3 py-3 text-right font-semibold">Actions</th>
@@ -191,6 +199,13 @@ export default function AllCompanies({ role }) {
                     </td>
                     <td className="px-3 py-3">
                       <button onClick={() => flip(r, "indexEligible")} title="Click to switch" className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r.indexEligible ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>{r.indexEligible ? "Y" : "N"}</button>
+                    </td>
+                    <td className="px-3 py-3">
+                      {r.directory === "mit" ? (
+                        <button onClick={() => flip(r, "isSponsored")} title={r.isSponsored ? "Remove sponsorship" : "Mark as sponsored on its city, state and country pages"} className={`inline-flex items-center justify-center rounded-lg border p-1.5 transition-colors ${r.isSponsored ? "border-orange-300 bg-orange-50 text-orange-500 hover:bg-orange-100" : "border-gray-200 text-gray-400 hover:bg-gray-100 hover:text-orange-400"}`}>
+                          <Star size={14} className={r.isSponsored ? "fill-orange-400" : ""} />
+                        </button>
+                      ) : <span className="text-gray-300">none</span>}
                     </td>
                     <td className="px-3 py-3">
                       <button onClick={() => flip(r, "isPublished")} title="Click to switch" className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r.isPublished === false ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>{r.isPublished === false ? "Hidden" : "Published"}</button>
