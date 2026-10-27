@@ -261,7 +261,7 @@ export default function AllCompanies({ role }) {
               <h3 className="font-bold text-gray-800">{confirm.length === 1 ? "Delete this company?" : `Delete ${confirm.length} companies?`}</h3>
             </div>
             <p className="mb-5 text-sm text-gray-600">
-              {confirm.length === 1 ? <><b>{confirm[0].companyName}</b> ({DIRECTORY_LABEL[confirm[0].directory]})</> : "They"} will be removed from the directory and from its location pages. This cannot be undone.
+              {confirm.length === 1 ? <><b>{confirm[0].companyName}</b> ({DIRECTORY_LABEL[confirm[0].directory]})</> : "They"} will be removed from the directory, from every city, state and country page it is on, and its pictures will be deleted from Cloudinary. This cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setConfirm(null)} disabled={deleting} className="flex-1 rounded-xl border border-gray-300 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
