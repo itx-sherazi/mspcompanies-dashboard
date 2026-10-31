@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { fetchCompanyAdmin, createCompanyAdmin, updateCompanyAdmin, uploadCompanyLogo } from "@/services/api";
+import ExtraPagesPicker from "./ExtraPagesPicker";
 import { X, Plus, Trash2, ExternalLink, Building2, Loader2, Upload } from "lucide-react";
 
 export const DIRECTORY_LABEL = { mit: "Managed IT", mssp: "MSSP", cyber: "Cybersecurity" };
@@ -19,7 +20,7 @@ const EMPTY = {
   tagline: "", profileSummary: "", specialization: "", clientSizeFocus: "", supportHours: "", bookingUrl: "",
   companyServices: "", companyPartners: "", technologies: "", industriesServed: "", certifications: "", complianceFrameworks: "", keywords: "",
   linkedinUrl: "", facebookUrl: "", twitterUrl: "",
-  faqs: [], indexEligible: false, isPublished: true, isSponsored: false,
+  faqs: [], indexEligible: false, isPublished: true, isSponsored: false, extraPages: [],
 };
 
 const toForm = (c) => {
@@ -31,6 +32,7 @@ const toForm = (c) => {
     else if (k === "indexEligible") f.indexEligible = Boolean(c.indexEligible);
     else if (k === "isPublished") f.isPublished = c.isPublished !== false;
     else if (k === "isSponsored") f.isSponsored = Boolean(c.isSponsored);
+    else if (k === "extraPages") f.extraPages = Array.isArray(c.extraPages) ? c.extraPages : [];
     else f[k] = c[k];
   }
   return f;
@@ -295,6 +297,13 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
                         <span className="block text-xs text-gray-500">The company is shown as sponsored, at the top, on its city, state and country pages. Untick to take the mark off.</span>
                       </span>
                     </label>
+                  ) : null}
+                  {directory === "mit" ? (
+                    <div className="rounded-xl border border-gray-200 p-4">
+                      <b className="text-sm text-gray-800">Also show on these pages</b>
+                      <span className="mb-3 block text-xs text-gray-500">Besides the city, state and country pages its location gives it. A sponsored company is sponsored on every one of them. These pages stay when a sheet is uploaded.</span>
+                      <ExtraPagesPicker value={form.extraPages} onChange={(v) => set("extraPages", v)} />
+                    </div>
                   ) : null}
                 </div>
               )}
