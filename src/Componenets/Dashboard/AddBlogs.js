@@ -8,6 +8,52 @@ import { handleApiError, showSuccess } from "@/utils/errorHandler";
 import Image from "next/image";
 import axios from "axios";
 
+const API_SEARCH = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/v1/companies/search`;
+
+/** Picks the listed company a blog is written for: type a name, choose from the directory. */
+function CompanyPicker({ value, onChange }) {
+  const [text, setText] = useState("");
+  const [found, setFound] = useState([]);
+  useEffect(() => {
+    const q = text.trim();
+    if (q.length < 2) return;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`${API_SEARCH}?q=${encodeURIComponent(q)}&limit=8`);
+        const j = await r.json();
+        setFound(Array.isArray(j.data) ? j.data : []);
+      } catch { setFound([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [text]);
+  if (value) {
+    return (
+      <div className="flex items-center justify-between rounded-lg border-2 border-blue-200 bg-blue-50 p-3">
+        <span className="text-gray-800"><b>{value.name || value.slug}</b> <span className="font-mono text-xs text-gray-500">/managed-it-services/{value.slug}</span></span>
+        <button type="button" onClick={() => onChange(null)} className="text-sm font-semibold text-red-600 hover:underline">Remove</button>
+      </div>
+    );
+  }
+  return (
+    <div className="relative">
+      <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type the company name..."
+        className="w-full p-4 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-[#1e477f] focus:border-[#1e477f]" />
+      {text.trim().length >= 2 && found.length > 0 ? (
+        <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+          {found.map((c) => (
+            <li key={c.slug}>
+              <button type="button" onClick={() => { onChange({ slug: c.slug, name: c.companyName }); setText(""); setFound([]); }} className="block w-full px-4 py-2 text-left hover:bg-gray-50">
+                <span className="font-semibold text-gray-800">{c.companyName}</span>
+                <span className="ml-2 text-xs text-gray-500">{[c.companyCity, c.companyState].filter(Boolean).join(", ")}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
 const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -24,6 +70,10 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
 
   const [faqs, setFaqs] = useState([]);
   const [published, setPublished] = useState(false);
+  const [company, setCompany] = useState(null); // { slug, name } of the listed company the blog is for
+  const [publishedBy, setPublishedBy] = useState("");
+  const [originalUrl, setOriginalUrl] = useState("");
+  const [isSponsored, setIsSponsored] = useState(false);
   const editorRef = useRef(null);
 
   // Predefined categories for better UX
@@ -57,6 +107,10 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
 
       setFaqs(blogData.faqs || []);
       setPublished(blogData.published || false);
+      setCompany(blogData.companySlug ? { slug: blogData.companySlug, name: blogData.companySlug } : null);
+      setPublishedBy(blogData.publishedBy || "");
+      setOriginalUrl(blogData.originalUrl || "");
+      setIsSponsored(blogData.isSponsored === true);
 
       if (blogData.image) {
         const API_URL =
@@ -160,6 +214,10 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
     formData.append("metaTitle", metaTitle);
     formData.append("metaDescription", metaDescription);
     formData.append("faqs", JSON.stringify(faqs));
+    formData.append("companySlug", company?.slug || "");
+    formData.append("publishedBy", publishedBy);
+    formData.append("originalUrl", originalUrl);
+    formData.append("isSponsored", company ? isSponsored : false);
     formData.append("published", publishStatus !== undefined ? publishStatus : published);
 
     setLoading(true);
@@ -186,6 +244,10 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
         setMetaDescription("");
         setPublished(false);
         setFaqs([]);
+        setCompany(null);
+        setPublishedBy("");
+        setOriginalUrl("");
+        setIsSponsored(false);
         if (editorRef.current) {
           editorRef.current.setContent("");
         }
@@ -355,6 +417,34 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
             value={metaDescription}
             onChange={(e) => setMetaDescription(e.target.value)}
           />
+        </div>
+
+        {/* Listed company */}
+        <div className="rounded-xl border-2 border-blue-100 bg-blue-50/40 p-5 space-y-4">
+          <div>
+            <label className="block mb-1 font-semibold text-gray-700 text-lg">Blog for a listed company (optional)</label>
+            <p className="mb-3 text-sm text-gray-500">The blog then shows the company card beside it and a &quot;Published by&quot; line at the end that links to the company profile.</p>
+            <CompanyPicker value={company} onChange={setCompany} />
+          </div>
+          {company ? (
+            <>
+              <div>
+                <label className="block mb-2 font-semibold text-gray-700">Published by (person)</label>
+                <input type="text" value={publishedBy} onChange={(e) => setPublishedBy(e.target.value)} placeholder="Brian Bennett"
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e477f]" />
+              </div>
+              <div>
+                <label className="block mb-2 font-semibold text-gray-700">Original link (optional)</label>
+                <input type="url" value={originalUrl} onChange={(e) => setOriginalUrl(e.target.value)} placeholder="https://company-site.com/blog/..."
+                  className="w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1e477f]" />
+                <p className="mt-1 text-sm text-gray-500">Fill this when the blog was first published on the company&apos;s own site. Google is then told that site is the original, so there is no duplicate content. Leave it empty for a blog written for us.</p>
+              </div>
+              <label className="flex items-start gap-3 rounded-lg border border-orange-200 bg-orange-50 p-3">
+                <input type="checkbox" className="mt-1" checked={isSponsored} onChange={(e) => setIsSponsored(e.target.checked)} />
+                <span className="text-sm text-gray-700"><b>Paid post.</b> The page shows &quot;Sponsored post&quot; and the links to the company are marked as sponsored.</span>
+              </label>
+            </>
+          ) : null}
         </div>
 
         {/* Tags */}
