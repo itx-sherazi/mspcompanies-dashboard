@@ -20,7 +20,7 @@ const EMPTY = {
   tagline: "", profileSummary: "", specialization: "", clientSizeFocus: "", supportHours: "", bookingUrl: "",
   companyServices: "", companyPartners: "", technologies: "", industriesServed: "", certifications: "", complianceFrameworks: "", keywords: "",
   linkedinUrl: "", facebookUrl: "", twitterUrl: "",
-  faqs: [], indexEligible: false, isPublished: true, isSponsored: false, extraPages: [],
+  faqs: [], indexEligible: false, isPublished: true, isSponsored: false, claimHidden: false, extraPages: [],
 };
 
 const toForm = (c) => {
@@ -32,6 +32,7 @@ const toForm = (c) => {
     else if (k === "indexEligible") f.indexEligible = Boolean(c.indexEligible);
     else if (k === "isPublished") f.isPublished = c.isPublished !== false;
     else if (k === "isSponsored") f.isSponsored = Boolean(c.isSponsored);
+    else if (k === "claimHidden") f.claimHidden = Boolean(c.claimHidden);
     else if (k === "extraPages") f.extraPages = Array.isArray(c.extraPages) ? c.extraPages : [];
     else f[k] = c[k];
   }
@@ -287,6 +288,13 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
                     <span>
                       <b className="text-sm text-gray-800">Index Eligible (Y)</b>
                       <span className="block text-xs text-gray-500">Google may index the profile only when this is ticked (and, for MSSP and cybersecurity, once indexing of profiles is switched on in the website code).</span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 rounded-xl border border-gray-200 p-4">
+                    <input type="checkbox" className="mt-1" checked={form.claimHidden} onChange={(e) => set("claimHidden", e.target.checked)} />
+                    <span>
+                      <b className="text-sm text-gray-800">Hide the Claim button</b>
+                      <span className="block text-xs text-gray-500">For a paid listing or a company that already owns its profile. The &quot;Claim this profile&quot; button is taken off its profile page.</span>
                     </span>
                   </label>
                   {directory === "mit" ? (

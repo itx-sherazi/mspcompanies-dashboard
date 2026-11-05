@@ -65,7 +65,7 @@ export default function AllCompanies({ role }) {
 
   // switch Index Eligible or Published without opening the form
   const flip = async (r, field) => {
-    const next = field === "indexEligible" ? !r.indexEligible : field === "isSponsored" ? !r.isSponsored : r.isPublished === false;
+    const next = field === "indexEligible" ? !r.indexEligible : field === "isSponsored" ? !r.isSponsored : field === "claimHidden" ? !r.claimHidden : r.isPublished === false;
     const res = await updateCompanyAdmin(r.directory, r.slug, { [field]: next });
     if (res.data?.ok) {
       setRows((list) => list.map((x) => (key(x) === key(r) ? { ...x, [field]: next } : x)));
@@ -169,6 +169,7 @@ export default function AllCompanies({ role }) {
                   <th className="px-3 py-3 font-semibold">Location</th>
                   <th className="px-3 py-3 font-semibold">Index</th>
                   <th className="px-3 py-3 font-semibold">Sponsored</th>
+                  <th className="px-3 py-3 font-semibold">Claim button</th>
                   <th className="px-3 py-3 font-semibold">Status</th>
                   <th className="px-3 py-3 font-semibold">Links</th>
                   <th className="px-3 py-3 text-right font-semibold">Actions</th>
@@ -206,6 +207,9 @@ export default function AllCompanies({ role }) {
                           <Star size={14} className={r.isSponsored ? "fill-orange-400" : ""} />
                         </button>
                       ) : <span className="text-gray-300">none</span>}
+                    </td>
+                    <td className="px-3 py-3">
+                      <button onClick={() => flip(r, "claimHidden")} title={r.claimHidden ? "Click to show the Claim button again" : "Click to hide the Claim button on this profile"} className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r.claimHidden ? "bg-gray-100 text-gray-500" : "bg-blue-50 text-blue-700"}`}>{r.claimHidden ? "Hidden" : "Shown"}</button>
                     </td>
                     <td className="px-3 py-3">
                       <button onClick={() => flip(r, "isPublished")} title="Click to switch" className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${r.isPublished === false ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"}`}>{r.isPublished === false ? "Hidden" : "Published"}</button>

@@ -9,6 +9,7 @@ import {
   FaGlobeAmericas,
   FaListAlt,
   FaUserCheck,
+  FaQuoteRight,
   FaBuilding,
   FaShieldAlt,
   FaLayerGroup,
@@ -193,6 +194,16 @@ export default function Sidebar({
             label="Listing Requests"
             isActive={activeTab === "ListingRequests"}
             onClick={() => setActiveTab("ListingRequests")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("QuoteRequests") && (
+          <SidebarButton
+            icon={<FaQuoteRight size={20} />}
+            label="Quote Requests"
+            isActive={activeTab === "QuoteRequests"}
+            onClick={() => setActiveTab("QuoteRequests")}
             sidebarOpen={sidebarOpen}
           />
         )}
