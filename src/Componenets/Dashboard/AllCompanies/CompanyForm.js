@@ -9,13 +9,14 @@ import { X, Plus, Trash2, ExternalLink, Building2, Loader2, Upload } from "lucid
 export const DIRECTORY_LABEL = { mit: "Managed IT", mssp: "MSSP", cyber: "Cybersecurity" };
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://mspcompanies.us";
 
+const PROFILE_BASE = { mit: "/managed-it-services", mssp: "/managed-security-service-providers", cyber: "/cybersecurity-companies" };
 const INPUT = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1d4882]/30 focus:border-[#1d4882] outline-none";
 
 // The list fields are typed as text (commas or new lines) and sent as they are; the API splits them.
 const LIST_KEYS = ["companyServices", "companyPartners", "technologies", "industriesServed", "certifications", "complianceFrameworks", "keywords"];
 
 const EMPTY = {
-  companyName: "", website: "", image: "", phone: "", employees: "", revenueSize: "", foundedYear: "", industry: "", description: "",
+  companyName: "", slug: "", metaTitle: "", metaDescription: "", website: "", image: "", phone: "", employees: "", revenueSize: "", foundedYear: "", industry: "", description: "",
   companyStreet: "", companyCity: "", companyState: "", companyCountry: "", companyPostalCode: "", address: "", serviceArea: "", googleMapsUrl: "",
   tagline: "", profileSummary: "", specialization: "", clientSizeFocus: "", supportHours: "", bookingUrl: "",
   companyServices: "", companyPartners: "", technologies: "", industriesServed: "", certifications: "", complianceFrameworks: "", keywords: "",
@@ -186,6 +187,27 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
               {tab === "basics" && (
                 <>
                   <Field label="Company name *" wide>{input("companyName")}</Field>
+                  <Field
+                    label="Profile link (slug)"
+                    hint={isNew ? "leave empty to make it from the name and city" : "changing it moves the profile to a new link"}
+                    wide
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="hidden shrink-0 text-xs text-gray-400 sm:inline">{PROFILE_BASE[directory]}/</span>
+                      <input
+                        className={INPUT}
+                        value={form.slug}
+                        onChange={(e) => set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))}
+                        placeholder="acme-it-chicago"
+                        spellCheck={false}
+                      />
+                    </div>
+                    {!isNew && meta && form.slug && form.slug !== meta.slug ? (
+                      <span className="mt-1 block rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        The profile will move from <b>{PROFILE_BASE[directory]}/{meta.slug}</b> to <b>{PROFILE_BASE[directory]}/{form.slug}</b>. The old link redirects to the new one, so nothing breaks.
+                      </span>
+                    ) : null}
+                  </Field>
                   <Field label="Website" hint="https://...">{input("website", { placeholder: "https://www.example.com" })}</Field>
                   <Field label="Phone">{input("phone")}</Field>
                   <Field label="Logo link" hint="https://... (a picture link)" wide>
@@ -222,6 +244,8 @@ export default function CompanyForm({ mode, directory: initialDirectory, slug, o
               )}
               {tab === "profile" && (
                 <>
+                  <Field label="Meta title" hint={`${form.metaTitle.length} characters, about 60 is best. Empty = automatic`} wide>{input("metaTitle", { maxLength: 120, placeholder: "Shown in Google as the title of the profile" })}</Field>
+                  <Field label="Meta description" hint={`${form.metaDescription.length} characters, about 155 is best. Empty = automatic`} wide>{area("metaDescription", 3, { maxLength: 320, placeholder: "Shown in Google under the title" })}</Field>
                   <Field label="Tagline" wide>{input("tagline")}</Field>
                   <Field label="Profile summary" hint="the About text of the profile" wide>{area("profileSummary", 7)}</Field>
                   <Field label="Specialization">{input("specialization")}</Field>
