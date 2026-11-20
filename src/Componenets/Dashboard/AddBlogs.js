@@ -10,6 +10,9 @@ import axios from "axios";
 
 const API_SEARCH = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/v1/companies/search`;
 
+const DIRECTORY_LABEL = { msp: "MSP", mssp: "MSSP", cyber: "Cybersecurity", vendor: "Vendor" };
+const DIRECTORY_PATH = { msp: "/managed-it-services", mssp: "/managed-security-service-providers", cyber: "/cybersecurity-companies", vendor: "/tools" };
+
 /** Picks the listed company a blog is written for: type a name, choose from the directory. */
 function CompanyPicker({ value, onChange }) {
   const [text, setText] = useState("");
@@ -19,7 +22,7 @@ function CompanyPicker({ value, onChange }) {
     if (q.length < 2) return;
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`${API_SEARCH}?q=${encodeURIComponent(q)}&limit=8`);
+        const r = await fetch(`${API_SEARCH}?q=${encodeURIComponent(q)}&limit=8&directory=all`);
         const j = await r.json();
         setFound(Array.isArray(j.data) ? j.data : []);
       } catch { setFound([]); }
@@ -29,21 +32,22 @@ function CompanyPicker({ value, onChange }) {
   if (value) {
     return (
       <div className="flex items-center justify-between rounded-lg border-2 border-blue-200 bg-blue-50 p-3">
-        <span className="text-gray-800"><b>{value.name || value.slug}</b> <span className="font-mono text-xs text-gray-500">/managed-it-services/{value.slug}</span></span>
+        <span className="text-gray-800"><b>{value.name || value.slug}</b> <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-800">{DIRECTORY_LABEL[value.directory] || "MSP"}</span> <span className="font-mono text-xs text-gray-500">{DIRECTORY_PATH[value.directory] || DIRECTORY_PATH.msp}/{value.slug}</span></span>
         <button type="button" onClick={() => onChange(null)} className="text-sm font-semibold text-red-600 hover:underline">Remove</button>
       </div>
     );
   }
   return (
     <div className="relative">
-      <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type the company name..."
+      <input type="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type any company name (MSP, MSSP, cybersecurity or vendor)..."
         className="w-full p-4 border-2 border-gray-300 rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-[#1e477f] focus:border-[#1e477f]" />
       {text.trim().length >= 2 && found.length > 0 ? (
         <ul className="absolute z-10 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
           {found.map((c) => (
-            <li key={c.slug}>
-              <button type="button" onClick={() => { onChange({ slug: c.slug, name: c.companyName }); setText(""); setFound([]); }} className="block w-full px-4 py-2 text-left hover:bg-gray-50">
+            <li key={`${c.directory}|${c.slug}`}>
+              <button type="button" onClick={() => { onChange({ slug: c.slug, name: c.companyName, directory: c.directory || "msp" }); setText(""); setFound([]); }} className="block w-full px-4 py-2 text-left hover:bg-gray-50">
                 <span className="font-semibold text-gray-800">{c.companyName}</span>
+                <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-semibold text-gray-600">{c.directoryLabel || DIRECTORY_LABEL[c.directory]}</span>
                 <span className="ml-2 text-xs text-gray-500">{[c.companyCity, c.companyState].filter(Boolean).join(", ")}</span>
               </button>
             </li>
@@ -107,7 +111,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
 
       setFaqs(blogData.faqs || []);
       setPublished(blogData.published || false);
-      setCompany(blogData.companySlug ? { slug: blogData.companySlug, name: blogData.companySlug } : null);
+      setCompany(blogData.companySlug ? { slug: blogData.companySlug, name: blogData.companySlug, directory: blogData.companyDirectory || "msp" } : null);
       setPublishedBy(blogData.publishedBy || "");
       setOriginalUrl(blogData.originalUrl || "");
       setIsSponsored(blogData.isSponsored === true);
@@ -215,6 +219,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
     formData.append("metaDescription", metaDescription);
     formData.append("faqs", JSON.stringify(faqs));
     formData.append("companySlug", company?.slug || "");
+    formData.append("companyDirectory", company?.directory || "msp");
     formData.append("publishedBy", publishedBy);
     formData.append("originalUrl", originalUrl);
     formData.append("isSponsored", company ? isSponsored : false);
@@ -423,7 +428,7 @@ const Addblogs = ({ blogData, setEditingBlog, setActiveTab }) => {
         <div className="rounded-xl border-2 border-blue-100 bg-blue-50/40 p-5 space-y-4">
           <div>
             <label className="block mb-1 font-semibold text-gray-700 text-lg">Blog for a listed company (optional)</label>
-            <p className="mb-3 text-sm text-gray-500">The blog then shows the company card beside it and a &quot;Published by&quot; line at the end that links to the company profile.</p>
+            <p className="mb-3 text-sm text-gray-500">The blog then shows the company card beside it and a &quot;Published by&quot; line at the end that links to the company profile. Companies from all four directories can be picked.</p>
             <CompanyPicker value={company} onChange={setCompany} />
           </div>
           {company ? (
