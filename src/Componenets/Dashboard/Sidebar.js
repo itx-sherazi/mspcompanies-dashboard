@@ -10,6 +10,7 @@ import {
   FaListAlt,
   FaUserCheck,
   FaQuoteRight,
+  FaStar,
   FaBuilding,
   FaShieldAlt,
   FaLayerGroup,
@@ -204,6 +205,16 @@ export default function Sidebar({
             label="Quote Requests"
             isActive={activeTab === "QuoteRequests"}
             onClick={() => setActiveTab("QuoteRequests")}
+            sidebarOpen={sidebarOpen}
+          />
+        )}
+
+        {show("Reviews") && (
+          <SidebarButton
+            icon={<FaStar size={20} />}
+            label="Reviews"
+            isActive={activeTab === "Reviews"}
+            onClick={() => setActiveTab("Reviews")}
             sidebarOpen={sidebarOpen}
           />
         )}

@@ -20,6 +20,7 @@ import Overview from "@/Componenets/Dashboard/Overview";
 import MasterSheet from "@/Componenets/Dashboard/MasterSheet";
 import ClaimRequests from "@/Componenets/Dashboard/ClaimRequests";
 import QuoteRequests from "@/Componenets/Dashboard/QuoteRequests";
+import Reviews from "@/Componenets/Dashboard/Reviews";
 
 const SEO_ALLOWED_TABS = new Set([
   "Overview",
@@ -106,6 +107,8 @@ export default function Dashboard() {
         return <ClaimRequests />;
       case "QuoteRequests":
         return <QuoteRequests />;
+      case "Reviews":
+        return <Reviews />;
       case "AllCompanies":
         return <AllCompanies role={role} />;
       case "MspPages":
